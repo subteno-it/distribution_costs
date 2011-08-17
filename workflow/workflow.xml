@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        ##############################################################################
+        #
+        #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
+        #    Copyright (C) 2011 SYLEAM Info Services ([http://www.Syleam.fr/]) 
+        #              Sylvain Garancher [sylvain.garancher@syleam.fr]
+        #
+        #    This file is a part of distribution_costs
+        #
+        #    distribution_costs is free software: you can redistribute it and/or modify
+        #    it under the terms of the GNU General Public License as published by
+        #    the Free Software Foundation, either version 3 of the License, or
+        #    (at your option) any later version.
+        #
+        #    distribution_costs is distributed in the hope that it will be useful,
+        #    but WITHOUT ANY WARRANTY; without even the implied warranty of
+        #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        #    GNU General Public License for more details.
+        #
+        #    You should have received a copy of the GNU General Public License
+        #    along with this program.  If not, see [http://www.gnu.org/licenses/].
+        #
+        ##############################################################################
+
+        #
+        # Workflow
+        #
+        <record id="wkf_distribution_costs" model="workflow">
+            <field name="name">Distribution Costs</field>
+            <field name="osv">distribution.costs</field>
+            <field name="on_create">True</field>
+        </record>
+
+        #
+        # States
+        #
+        <record id="wkf_act_draft" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="flow_start">True</field>
+            <field name="name">draft</field>
+            <field name="kind">dummy</field>
+        </record>
+        <record id="wkf_act_confirmed" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="name">confirmed</field>
+            <field name="kind">function</field>
+            <field name="action">compute_cost_price()
+write({'state': 'confirmed'})</field>
+        </record>
+        <record id="wkf_act_updated" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="name">updated</field>
+            <field name="kind">function</field>
+            <field name="action">update_cost_price()
+write({'state': 'updated'})</field>
+        </record>
+        <record id="wkf_act_done" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="flow_stop">True</field>
+            <field name="name">done</field>
+            <field name="kind">function</field>
+            <field name="action">write({'state': 'done'})</field>
+        </record>
+        <record id="wkf_act_canceled" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="flow_stop">True</field>
+            <field name="name">canceled</field>
+            <field name="kind">function</field>
+            <field name="action">write({'state': 'canceled'})</field>
+        </record>
+
+        #
+        # Tansitions
+        #
+        <record id="wkf_trans_draft_canceled" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_draft"/>
+            <field name="act_to" ref="wkf_act_canceled"/>
+            <field name="signal">button_cancel</field>
+        </record>
+        <record id="wkf_trans_draft_confirmed" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_draft"/>
+            <field name="act_to" ref="wkf_act_confirmed"/>
+            <field name="signal">button_confirm</field>
+        </record>
+        <record id="wkf_trans_confirmed_canceled" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_confirmed"/>
+            <field name="act_to" ref="wkf_act_canceled"/>
+            <field name="signal">button_cancel</field>
+        </record>
+        <record id="wkf_trans_confirmed_updated" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_confirmed"/>
+            <field name="act_to" ref="wkf_act_updated"/>
+            <field name="signal">button_update</field>
+        </record>
+        <record id="wkf_trans_updated_done" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_updated"/>
+            <field name="act_to" ref="wkf_act_done"/>
+            <field name="signal">button_done</field>
+        </record>
+
+    </data>
+</openerp>

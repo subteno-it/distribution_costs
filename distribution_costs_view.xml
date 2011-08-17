@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        ##############################################################################
+        #
+        #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
+        #    Copyright (C) 2011 SYLEAM Info Services ([http://www.Syleam.fr/]) 
+        #              Sylvain Garancher [sylvain.garancher@syleam.fr]
+        #
+        #    This file is a part of distribution_costs
+        #
+        #    distribution_costs is free software: you can redistribute it and/or modify
+        #    it under the terms of the GNU General Public License as published by
+        #    the Free Software Foundation, either version 3 of the License, or
+        #    (at your option) any later version.
+        #
+        #    distribution_costs is distributed in the hope that it will be useful,
+        #    but WITHOUT ANY WARRANTY; without even the implied warranty of
+        #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        #    GNU General Public License for more details.
+        #
+        #    You should have received a copy of the GNU General Public License
+        #    along with this program.  If not, see [http://www.gnu.org/licenses/].
+        #
+        ##############################################################################
+
+        #
+        # Distribution costs
+        #
+        <record id="view_distribution_costs_tree" model="ir.ui.view">
+            <field name="name">distribution.costs.tree</field>
+            <field name="model">distribution.costs</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Distribution Costs">
+                    <field name="name"/>
+                    <field name="date"/>
+                    <field name="company_id" widget="selection"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+        <record id="view_distribution_costs_form" model="ir.ui.view">
+            <field name="name">distribution.costs.form</field>
+            <field name="model">distribution.costs</field>
+            <field name="type">form</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <form string="Distribution Costs">
+                    <field name="name"/>
+                    <field name="date"/>
+                    <field name="origin"/>
+                    <field name="description"/>
+                    <field name="partner_id"/>
+                    <field name="address_id"/>
+                    <field name="weight"/>
+                    <field name="volume"/>
+                    <field name="weight_volume"/>
+                    <field name="company_id" widget="selection"/>
+                    <notebook colspan="4">
+                        <page string="Goods Invoices">
+                            <separator string="Invoice Goods" colspan="4"/>
+                            <field name="goods_ids" widget="many2many" nolabel="1"/>
+                        </page>
+                        <page string="Costs Invoices">
+                            <separator string="invoice Costs" colspan="4"/>
+                            <field name="costs_ids" widget="many2many" nolabel="1"/>
+                        </page>
+                        <page string="Cost lines"><!--attrs="{'invisible': [('state','=', 'draft')]}"-->
+                            <field name="line_ids" colspan="4" nolabel="1" attrs="{'readonly': [('state','!=', 'draft')]}">
+                                <form string="Distribution Costs Line">
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="weight"/>
+                                    <field name="volume"/>
+                                    <field name="price_unit"/>
+                                    <field name="cost_price"/>
+                                    <field name="manual_cost_price"/>
+                                    <field name="total_tax"/>
+                                    <field name="coef"/>
+                                    <field name="company_id" widget="selection"/>
+                                    <field name="tax_ids" colspan="4" nolabel="1">
+                                        <form string="Distribution Costs Line Tax">
+                                            <field name="tax_id"/>
+                                            <field name="base_amount"/>
+                                            <field name="amount_tax"/>
+                                            <field name="company_id" widget="selection"/>
+                                        </form>
+                                        <tree string="Distribution Costs Line Tax">
+                                            <field name="tax_id"/>
+                                            <field name="base_amount"/>
+                                            <field name="amount_tax"/>
+                                        </tree>
+                                    </field>
+                                </form>
+                                <tree string="Distribution Costs Line">
+                                    <field name="product_id"/>
+                                    <field name="quantity"/>
+                                    <field name="weight"/>
+                                    <field name="volume"/>
+                                    <field name="price_unit" sum="Goods price"/>
+                                    <field name="cost_price"/>
+                                    <field name="manual_cost_price"/>
+                                    <field name="coef"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                    <field name="state"/>
+                    <group colspan="2">
+                        <button string="Cancel" states="draft,confirmed" name="button_cancel" icon="gtk-cancel"/>
+                        <button string="Confirm" states="draft" name="button_confirm" icon="gtk-apply"/>
+                        <button string="Update" states="confirmed" name="button_update"/>
+                        <button string="Done" states="updated" name="button_done"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record model="ir.actions.act_window" id="act_open_distribution_costs_view">
+            <field name="name">Distribution Costs</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">distribution.costs</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+        </record>
+        <record model="ir.actions.act_window.view" id="act_open_distribution_costs_view_form">
+            <field name="act_window_id" ref="act_open_distribution_costs_view"/>
+            <field name="sequence" eval="20"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_distribution_costs_form"/>
+        </record>
+        <record model="ir.actions.act_window.view" id="act_open_distribution_costs_view_tree">
+            <field name="act_window_id" ref="act_open_distribution_costs_view"/>
+            <field name="sequence" eval="10"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="view_distribution_costs_tree"/>
+        </record>
+        <menuitem id="menu_distribution_costs"
+            parent="purchase.menu_procurement_management_inventory"
+            sequence="20"
+            action="act_open_distribution_costs_view"/>
+
+        #
+        # Distribution costs line
+        #
+        <record id="view_distribution_costs_line_form" model="ir.ui.view">
+            <field name="name">distribution.costs.line.form</field>
+            <field name="model">distribution.costs.line</field>
+            <field name="type">form</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <form string="Distribution Costs Line">
+                    <field name="costs_id"/>
+                    <field name="product_id"/>
+                    <field name="quantity"/>
+                    <field name="weight"/>
+                    <field name="volume"/>
+                    <field name="cost_price"/>
+                    <field name="manual_cost_price"/>
+                    <field name="coef"/>
+                    <field name="company_id" widget="selection"/>
+                    <field name="tax_ids" colspan="4" nolabel="1">
+                        <form string="Distribution Costs Line Tax">
+                            <field name="tax_id"/>
+                            <field name="base_amount"/>
+                            <field name="amount_tax"/>
+                        </form>
+                        <tree string="Distribution Costs Line Tax">
+                            <field name="tax_id"/>
+                            <field name="base_amount"/>
+                            <field name="amount_tax"/>
+                        </tree>
+                    </field>
+                </form>
+            </field>
+        </record>
+        <record id="view_distribution_costs_line_tree" model="ir.ui.view">
+            <field name="name">distribution.costs.line.tree</field>
+            <field name="model">distribution.costs.line</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Distribution Costs Line">
+                    <field name="costs_id"/>
+                    <field name="product_id"/>
+                    <field name="quantity"/>
+                    <field name="weight"/>
+                    <field name="volume"/>
+                    <field name="cost_price"/>
+                    <field name="manual_cost_price"/>
+                    <field name="coef"/>
+                </tree>
+            </field>
+        </record>
+
+        #
+        # Distribution costs line tax
+        #
+        <record id="view_distribution_costs_line_tax_form" model="ir.ui.view">
+            <field name="name">distribution.costs.line.tax.form</field>
+            <field name="model">distribution.costs.line.tax</field>
+            <field name="type">form</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <form string="Distribution Costs Line Tax">
+                    <field name="line_id"/>
+                    <field name="tax_id"/>
+                    <field name="base_amount"/>
+                    <field name="amount_tax"/>
+                    <field name="company_id" widget="selection"/>
+                </form>
+            </field>
+        </record>
+        <record id="view_distribution_costs_line_tax_tree" model="ir.ui.view">
+            <field name="name">distribution.costs.line.tax.tree</field>
+            <field name="model">distribution.costs.line.tax</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Distribution Costs Line Tax">
+                    <field name="line_id"/>
+                    <field name="tax_id"/>
+                    <field name="base_amount"/>
+                    <field name="amount_tax"/>
+                </tree>
+            </field>
+        </record>
+
+    </data>
+</openerp>
