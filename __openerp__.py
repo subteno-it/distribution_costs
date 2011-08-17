@@ -44,6 +44,7 @@
         'security/rules.xml',
         'base_view.xml',
         'distribution_costs_view.xml',
+        'distribution_costs_sequence.xml',
         'product_view.xml',
         'report_intrastat_view.xml',
         'workflow/workflow.xml',

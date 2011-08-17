@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        ##############################################################################
+        #
+        #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
+        #    Copyright (C) 2011 SYLEAM Info Services ([http://www.Syleam.fr/]) 
+        #              Sylvain Garancher [sylvain.garancher@syleam.fr]
+        #
+        #    This file is a part of distribution_costs
+        #
+        #    distribution_costs is free software: you can redistribute it and/or modify
+        #    it under the terms of the GNU General Public License as published by
+        #    the Free Software Foundation, either version 3 of the License, or
+        #    (at your option) any later version.
+        #
+        #    distribution_costs is distributed in the hope that it will be useful,
+        #    but WITHOUT ANY WARRANTY; without even the implied warranty of
+        #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        #    GNU General Public License for more details.
+        #
+        #    You should have received a copy of the GNU General Public License
+        #    along with this program.  If not, see [http://www.gnu.org/licenses/].
+        #
+        ##############################################################################
+
+        <record id="seq_code_distribution_costs" model="ir.sequence.type">
+            <field name="name">Distribution Costs</field>
+            <field name="code">distribution.costs</field>
+        </record>
+        <record id="seq_distribution_costs" model="ir.sequence">
+            <field name="name">Distribution Costs</field>
+            <field name="code">distribution.costs</field>
+            <field name="prefix">DC</field>
+            <field name="padding">4</field>
+            <field name="number_increment">1</field>
+        </record>
+
+    </data>
+</openerp>

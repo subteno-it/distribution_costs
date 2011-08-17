@@ -68,6 +68,7 @@ class distribution_costs(osv.osv):
     }
 
     _defaults = {
+        'name': lambda self, cr, uid, ids, c=None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
         'date': lambda *a: time.strftime('%Y-%m-%d %H:%M:%S'),
         'state': 'draft',
     }
