@@ -42,6 +42,13 @@
             <field name="name">draft</field>
             <field name="kind">dummy</field>
         </record>
+        <record id="wkf_act_in_progress" model="workflow.activity">
+            <field name="wkf_id" ref="wkf_distribution_costs"/>
+            <field name="name">in_progress</field>
+            <field name="kind">function</field>
+            <field name="action">read_invoices()
+write({'state': 'in_progress'})</field>
+        </record>
         <record id="wkf_act_confirmed" model="workflow.activity">
             <field name="wkf_id" ref="wkf_distribution_costs"/>
             <field name="name">confirmed</field>
@@ -79,8 +86,18 @@ write({'state': 'updated'})</field>
             <field name="act_to" ref="wkf_act_canceled"/>
             <field name="signal">button_cancel</field>
         </record>
-        <record id="wkf_trans_draft_confirmed" model="workflow.transition">
+        <record id="wkf_trans_in_progress_canceled" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_in_progress"/>
+            <field name="act_to" ref="wkf_act_canceled"/>
+            <field name="signal">button_cancel</field>
+        </record>
+        <record id="wkf_trans_draft_in_progress" model="workflow.transition">
             <field name="act_from" ref="wkf_act_draft"/>
+            <field name="act_to" ref="wkf_act_in_progress"/>
+            <field name="signal">button_progress</field>
+        </record>
+        <record id="wkf_trans_in_progress_confirmed" model="workflow.transition">
+            <field name="act_from" ref="wkf_act_in_progress"/>
             <field name="act_to" ref="wkf_act_confirmed"/>
             <field name="signal">button_confirm</field>
         </record>

@@ -24,16 +24,15 @@
         #
         ##############################################################################
 
-        <record id="view_product_category_form" model="ir.ui.view">
-            <field name="name">product.category.form</field>
-            <field name="model">product.category</field>
+        <record id="view_account_invoice_form" model="ir.ui.view">
+            <field name="name">account.invoice.form</field>
+            <field name="model">account.invoice</field>
             <field name="type">form</field>
             <field name="priority" eval="8"/>
-            <field name="inherit_id" ref="product.product_category_form_view"/>
+            <field name="inherit_id" ref="account.invoice_supplier_form"/>
             <field name="arch" type="xml">
-                <xpath expr="/form/field[@name='type']" position="after">
-                    <field name="intrastat_id"/>
-                    <field name="fret"/>
+                <xpath expr="/form/notebook/page/group/label[@string='']" position="replace">
+                    <field name="distribution"/>
                 </xpath>
             </field>
         </record>

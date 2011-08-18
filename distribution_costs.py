@@ -60,18 +60,69 @@ class distribution_costs(osv.osv):
         'weight': fields.float('Weight', help='Total weight'),
         'volume': fields.float('Volume', help='Total volume'),
         'weight_volume': fields.function(_compute_weight_volume, method=True, string='Weight volume', type='float', store=False, help='Weight/Volume value'),
-        'state': fields.selection([('draft', 'Draft'), ('confirmed', 'Confirmed'), ('updated', 'Updated'), ('done', 'Done'), ('canceled', 'Canceled')], 'State', required=True, readonly=True, help='State of the dstribution costs case',),
-        'goods_ids': fields.one2many('account.invoice', 'distribution_id', 'Invoice goods', domain=[('distribution_id','=','False')], help='List of goods invoices'),
-        'costs_ids': fields.one2many('account.invoice', 'distribution_id', 'Invoice costs', domain=[('distribution_id','=','False')], help='List of costs invoices'),
+        'state': fields.selection([('draft', 'Draft'), ('in_progress', 'In Progress'), ('confirmed', 'Confirmed'), ('updated', 'Updated'), ('done', 'Done'), ('canceled', 'Canceled')], 'State', required=True, readonly=True, help='State of the dstribution costs case',),
+        'invoice_ids': fields.one2many('account.invoice', 'distribution_id', 'Invoices', help='List of costs invoices'),
         'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', help='Article lines details'),
         'company_id': fields.many2one('res.company', 'Company', help='Company of the distribution cost case'),
+        'product_id': fields.related('line_ids', 'product_id', type='many2one', relation='product.product', string='Product', help='Products of the lines, used for search view'),
     }
 
     _defaults = {
-        'name': lambda self, cr, uid, ids, c=None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
-        'date': lambda *a: time.strftime('%Y-%m-%d %H:%M:%S'),
+        'name': lambda self, cr, uid, ids, c = None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
+        'date': lambda * a: time.strftime('%Y-%m-%d %H:%M:%S'),
         'state': 'draft',
     }
+
+    def read_invoices(self, cr, uid, ids, context=None):
+        """
+        Read invoices to create distribution costs lines
+        """
+        distribution_costs_line_obj = self.pool.get('distribution.costs.line')
+        account_invoice_line_obj = self.pool.get('account.invoice.line')
+        product_template_obj = self.pool.get('product.template')
+
+        # Retrieve fret invoice lines
+        fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', True), ('product_id.categ_id.fret', '=', True)], context=context)
+        # Compute total fret amount
+        fret_amount = account_invoice_line_obj.read(cr, uid, fret_invoice_line_ids, ['price_subtotal'], context=context)
+        fret_amount = sum([data['price_subtotal'] for data in fret_amount])
+
+        # Retrieve product invoice lines
+        product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', False), ('product_id.categ_id.fret', '=', False)], context=context)
+        # Compute total product amount
+        product_amount = account_invoice_line_obj.read(cr, uid, product_invoice_line_ids, ['price_subtotal'], context=context)
+        product_amount = sum([data['price_subtotal'] for data in product_amount])
+
+        # Compute lines data
+        data_list = []
+        for invoice_line in account_invoice_line_obj.browse(cr, uid, product_invoice_line_ids, context=context):
+            product_id = invoice_line.product_id
+
+            # Retrieve intrastat_id, raise if not found
+            intrastat_id = product_id.intrastat_id or product_id.categ_id and product_id.categ_id.intrastat_id
+            if not intrastat_id:
+                raise osv.except_osv(_('Error'), _('Intrastat code not found on product %s !' % product_id.name))
+
+            # Retrieve taxes for this line from intrastat code
+            tax_data = []
+            for tax_id in intrastat_id.tax_ids:
+                tax_data.append((0, 0, {'tax_id': tax_id.id}))
+
+            data_list.append({
+                'costs_id': invoice_line.invoice_id.distribution_id.id,
+                'product_id': product_id.id,
+                'fret': fret_amount * product_amount / invoice_line.quantity / invoice_line.price_subtotal,
+                'quantity': invoice_line.quantity,
+                'volume': product_id.volume,
+                'weight': product_id.weight,
+                'price_unit': invoice_line.price_unit,
+                'tax_ids': tax_data,
+                'company_id': invoice_line.invoice_id.distribution_id.company_id.id,
+            })
+
+        # Create lines
+        for data in data_list:
+            new_id = distribution_costs_line_obj.create(cr, uid, data, context=context)
 
     def compute_cost_price(self, cr, uid, ids, context=None):
         """
@@ -94,38 +145,49 @@ class distribution_costs_line(osv.osv):
     _name = 'distribution.costs.line'
     _description = 'Distribution Costs Line'
 
-    def _compute_total_tax(self, cr, uid, ids, field_name, arg, context=None):
+    def _compute_values(self, cr, uid, ids, field_name, arg, context=None):
         """
-        Computes the sum of tax amounts in lines
+        Computes the cost price
         """
         distribution_costs_line_tax_obj = self.pool.get('distribution.costs.line.tax')
 
+        # Retrieve data from the line
+        lines_data = self.read(cr, uid, ids, ['price_unit', 'fret'], context=context)
+
         res = {}
-        for id in ids:
-            # Computes total tax aount from tax lines
+        for line_data in lines_data:
+            id = line_data['id']
+            res[id] = {}
+
+            # Retrieve data from the tax lines
             distribution_costs_line_tax_ids = distribution_costs_line_tax_obj.search(cr, uid, [('line_id', '=', id)], context=context)
             tax_amounts = distribution_costs_line_tax_obj.read(cr, uid, distribution_costs_line_tax_ids, ['amount_tax'], context=context)
-            res[id] = sum([data['amount_tax'] for data in tax_amounts])
+
+            # Computes total tax aount from tax lines
+            res[id]['total_tax'] = sum([data['amount_tax'] for data in tax_amounts])
+
+            # Computes cost price of the line
+            res[id]['cost_price'] = line_data['price_unit'] + line_data['fret'] + res[id]['total_tax']
+
+            # Computes coef of the line
+            res[id]['coef'] = res[id]['cost_price'] / line_data['price_unit']
 
         return res
 
     _columns = {
-        'costs_id': fields.many2one('distribution.costs', 'Distribution Costs', required=True, help='Distribution Costs'),
-        'product_id': fields.many2one('product.product', 'Product', required=True, help='Invoiced product'),
-        'quantity': fields.float('Quantity', help='Total quantity of invoiced products'),
-        'weight': fields.float('Weight', help='Total weight, used for some costs'),
-        'volume': fields.float('Volume', help='Total volume, used for some costs'),
-        'price_unit': fields.float('Price unit', help='Price unit of the product'),
-        'cost_price': fields.float('Cost Price', readonly=True, help='Computed cost price, readonly'),
-        'manual_cost_price': fields.float('Modified Cost Price', help='Modified cost price, saved on the product when validated'),
-        'total_tax': fields.function(_compute_total_tax, method=True, string='Tax amount', type='float', store=False, help='Total tax amount'),
-        'coef': fields.float('Coefficient', help='[Buy price / Cost price] coefficient'),
-        'tax_ids': fields.one2many('distribution.costs.line.tax', 'line_id', 'Taxes', help='Taxes use to compute cost price'),
-        'company_id': fields.many2one('res.company', 'Company', help='Company of the line'),
-    }
-
-    _defaults = {
-        'manual_cost_price': lambda self, cr, uid, ids, c=None: self.browse(cr, uid, ids, context=c).cost_price,
+        'costs_id': fields.many2one('distribution.costs', 'Distribution Costs', required=True, ondelete='cascade', help='Distribution Costs'),
+        'product_id': fields.many2one('product.product', 'Product', readonly=True, required=True, help='Invoiced product'),
+        'quantity': fields.float('Quantity', readonly=True, help='Total quantity of invoiced products'),
+        'fret': fields.float('Fret', readonly=True, help='Amount of fret'),
+        'weight': fields.float('Weight', readonly=True, help='Total weight, used for some costs'),
+        'volume': fields.float('Volume', readonly=True, help='Total volume, used for some costs'),
+        'price_unit': fields.float('Price unit', readonly=True, help='Price unit of the product'),
+        'total_tax': fields.function(_compute_values, method=True, string='Tax amount', type='float', multi='prices', store=False, help='Total tax amount'),
+        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', multi='prices', store=False, help='Computed cost price'),
+        'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=False, help='[Cost price / Unit price] coefficient'),
+        'manual_coef': fields.float('Modified Coefficient', help='Coefficient modifier'),
+        'tax_ids': fields.one2many('distribution.costs.line.tax', 'line_id', 'Taxes', readonly=True, help='Taxes use to compute cost price'),
+        'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the line'),
     }
 
 distribution_costs_line()
@@ -135,11 +197,25 @@ class distribution_costs_line_tax(osv.osv):
     _name = 'distribution.costs.line.tax'
     _description = 'Distribution Costs Line Tax'
 
+    def _compute_tax_amount(self, cr, uid, ids, field_name, arg, context=None):
+        """
+        Computes tax amount from base amount
+        """
+        account_tax_obj = self.pool.get('account.tax')
+        res = {}
+
+        for tax_line in self.browse(cr, uid, ids, context=context):
+            costs_id = tax_line.line_id.costs_id
+            taxes_value = account_tax_obj.compute_all(cr, uid, [tax_line.tax_id], tax_line.base_amount, 1, address_id=costs_id.address_id.id, product=tax_line.line_id.product_id.id, partner=costs_id.partner_id.id)
+            res[tax_line.id] = sum([data.get('amount', 0.) for data in taxes_value['taxes']])
+
+        return res
+
     _columns = {
         'line_id': fields.many2one('distribution.costs.line', 'Product Line', help='Product line for this tax'),
         'tax_id': fields.many2one('account.tax', 'Tax', help='Tax applied on the amount'),
-        'base_amount': fields.float('Base Amount', help='Base amount used to compute the tax'),
-        'amount_tax': fields.float('Tax Amount', help='Computed tax amount'),
+        'base_amount': fields.related('line_id', 'price_unit', type='float',string='Base Amount', help='Base amount used to compute the tax'),
+        'amount_tax': fields.function(_compute_tax_amount, method=True, string='Tax Amount', type='float', store=False, help='Computed tax amount'),
         'company_id': fields.many2one('res.company', 'Company', help='Company of the line tax'),
     }
 

@@ -24,18 +24,16 @@
         #
         ##############################################################################
 
-        <record id="view_product_category_form" model="ir.ui.view">
-            <field name="name">product.category.form</field>
-            <field name="model">product.category</field>
-            <field name="type">form</field>
-            <field name="priority" eval="8"/>
-            <field name="inherit_id" ref="product.product_category_form_view"/>
-            <field name="arch" type="xml">
-                <xpath expr="/form/field[@name='type']" position="after">
-                    <field name="intrastat_id"/>
-                    <field name="fret"/>
-                </xpath>
-            </field>
+        <record id="product_category_fret" model="product.category">
+            <field name="name">Fret</field>
+            <field name="type">view</field>
+            <field name="fret" eval="True"/>
+        </record>
+        <record id="product_category_distribution" model="product.category">
+            <field name="name">Distribution</field>
+            <field name="type">normal</field>
+            <field name="parent_id" ref="product_category_fret"/>
+            <field name="fret" eval="True"/>
         </record>
 
     </data>

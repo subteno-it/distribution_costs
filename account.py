@@ -31,7 +31,8 @@ class account_invoice(osv.osv):
     _inherit = 'account.invoice'
 
     _columns = {
-        'distribution_id': fields.many2one('distribution.costs', 'Distribution Cost', ),
+        'distribution': fields.boolean('Distribution', help='Check if this invoice is a distribution invoice'),
+        'distribution_id': fields.many2one('distribution.costs', 'Distribution Cost', help='Associated distribution costs case'),
     }
 
 account_invoice()
