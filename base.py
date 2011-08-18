@@ -31,7 +31,7 @@ class res_company(osv.osv):
     _inherit = 'res.company'
 
     _columns = {
-        'weight_volume_formula': fields.char('Weight/Volume formula', size=128, help='Formula to compute th weight/volume value'),
+        'weight_volume_formula': fields.char('Weight/Volume formula', size=128, help='Formula to compute the weight/volume value'),
     }
 
 res_company()

@@ -101,7 +101,7 @@ class distribution_costs(osv.osv):
             # Retrieve intrastat_id, raise if not found
             intrastat_id = product_id.intrastat_id or product_id.categ_id and product_id.categ_id.intrastat_id
             if not intrastat_id:
-                raise osv.except_osv(_('Error'), _('Intrastat code not found on product %s !' % product_id.name))
+                raise osv.except_osv(_('Error'), _('Intrastat code not found on product %s !') % product_id.name)
 
             # Retrieve taxes for this line from intrastat code
             tax_data = []
