@@ -1,1 +1,7 @@
-"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+"id","name","model_id/id","group_id/id","perm_read","perm_write","perm_create","perm_unlink"
+"distribution_costs_user","distribution_costs_user","distribution_costs.model_distribution_costs","purchase.group_purchase_user","1","","",""
+"distribution_costs_manager","distribution_costs_manager","distribution_costs.model_distribution_costs","purchase.group_purchase_manager","1","1","1","1"
+"distribution_costs_line_user","distribution_costs_line_user","distribution_costs.model_distribution_costs_line","purchase.group_purchase_user","1","","",""
+"distribution_costs_line_manager","distribution_costs_line_manager","distribution_costs.model_distribution_costs_line","purchase.group_purchase_manager","1","1","1","1"
+"distribution_costs_line_tax_user","distribution_costs_line_tax_user","distribution_costs.model_distribution_costs_line_tax","purchase.group_purchase_user","1","","",""
+"distribution_costs_line_tax_manager","distribution_costs_line_tax_manager","distribution_costs.model_distribution_costs_line_tax","purchase.group_purchase_manager","1","1","1","1"
