@@ -62,7 +62,7 @@ class distribution_costs(osv.osv):
         'weight_volume': fields.function(_compute_weight_volume, method=True, string='Weight volume', type='float', store=False, help='Weight/Volume value'),
         'state': fields.selection([('draft', 'Draft'), ('in_progress', 'In Progress'), ('confirmed', 'Confirmed'), ('updated', 'Updated'), ('done', 'Done'), ('canceled', 'Canceled')], 'State', required=True, readonly=True, help='State of the dstribution costs case',),
         'invoice_ids': fields.one2many('account.invoice', 'distribution_id', 'Invoices', readonly=True, states={'draft': [('readonly', False)]}, help='List of costs invoices'),
-        'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', readonly=True, states={'draft': [('readonly', False)]}, help='Article lines details'),
+        'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', readonly=True, states={'in_progress': [('readonly', False)]}, help='Article lines details'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the distribution cost case'),
         'product_id': fields.related('line_ids', 'product_id', type='many2one', relation='product.product', string='Product', help='Products of the lines, used for search view'),
     }
@@ -112,17 +112,20 @@ class distribution_costs(osv.osv):
             data_list.append({
                 'costs_id': invoice_line.invoice_id.distribution_id.id,
                 'product_id': product_id.id,
-                'fret_total': fret_amount * product_amount / invoice_line.price_subtotal,
+                'fret_total': fret_amount * invoice_line.price_subtotal / product_amount,
                 'quantity': invoice_line.quantity,
                 'volume': product_id.volume * invoice_line.quantity,
                 'weight': product_id.weight * invoice_line.quantity,
                 'price_total': invoice_line.price_unit * invoice_line.quantity,
                 'tax_ids': tax_data,
+                'invoice_line_id': invoice_line.id,
             })
 
         # Create lines
         for data in data_list:
             new_id = distribution_costs_line_obj.create(cr, uid, data, context=context)
+
+        return True
 
     def compute_cost_price(self, cr, uid, ids, context=None):
         """
@@ -136,7 +139,20 @@ class distribution_costs(osv.osv):
         This method updates products costs from lines
         """
         # TODO
-        pass
+        # dist_cost_line => acc_invoice_line => acc_invoice => purchase_order => purchase_order_line => stock_move
+        purchase_order_obj = self.pool.get('purchase.order')
+        stock_move_obj = self.pool.get('stock.move')
+
+        for distribution_costs in self.browse(cr, uid, ids, context=context):
+            for dc_line in distribution_costs.line_ids:
+                purchase_order_ids = purchase_order_obj.search(cr, uid, [('invoice_ids', 'in', dc_line.invoice_line_id.invoice_id.id)], context=context)
+                stock_move_ids = []
+                for purchase_order_id in purchase_order_ids:
+                    purchase_order = purchase_order_obj.browse(cr, uid, purchase_order_id, context=context)
+                    for purchase_order_line in purchase_order.order_line:
+                        stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
+
+                stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.price_unit}, context=context)
 
 distribution_costs()
 
@@ -152,12 +168,14 @@ class distribution_costs_line(osv.osv):
         distribution_costs_line_tax_obj = self.pool.get('distribution.costs.line.tax')
 
         # Retrieve data from the line
-        lines_data = self.read(cr, uid, ids, ['price_total', 'fret_total', 'quantity'], context=context)
+        lines_data = self.read(cr, uid, ids, ['price_total', 'manual_coef', 'fret_total', 'quantity'], context=context)
 
         res = {}
         for line_data in lines_data:
+            # Base values
             id = line_data['id']
             price_total = line_data['price_total']
+            manual_coef = line_data['manual_coef']
             fret_total = line_data['fret_total']
             quantity = line_data['quantity']
 
@@ -165,26 +183,43 @@ class distribution_costs_line(osv.osv):
             distribution_costs_line_tax_ids = distribution_costs_line_tax_obj.search(cr, uid, [('line_id', '=', id)], context=context)
             tax_amounts = distribution_costs_line_tax_obj.read(cr, uid, distribution_costs_line_tax_ids, ['amount_tax'], context=context)
 
-            res[id] = {}
+            # Computed values
+            tax_total = sum([data['amount_tax'] for data in tax_amounts])
 
-            res[id]['tax_total'] = sum([data['amount_tax'] for data in tax_amounts])
-            res[id]['cost_price_total'] = price_total + fret_total + res[id]['tax_total']
+            coef = (price_total + fret_total + tax_total) / price_total
+            mod_coef = coef + manual_coef
 
-            res[id]['price_unit'] = price_total / quantity
-            res[id]['fret_unit'] = fret_total / quantity
-            res[id]['tax_unit'] = res[id]['tax_total'] / quantity
-            res[id]['cost_price_unit'] = res[id]['cost_price_total'] / quantity
-            res[id]['coef'] = res[id]['cost_price_unit'] / res[id]['price_unit']
+            cost_price_total = price_total * mod_coef
+
+            price_unit = price_total / quantity
+            fret_unit = fret_total / quantity
+            tax_unit = tax_total / quantity
+            cost_price_unit = cost_price_total / quantity
+
+            # Return values
+            res[id] = {
+                'tax_total': tax_total,
+                'cost_price_total': cost_price_total,
+
+                'coef': coef,
+
+                'price_unit': price_unit,
+                'fret_unit': fret_unit,
+                'tax_unit': tax_unit,
+                'cost_price_unit': cost_price_unit,
+            }
 
         return res
 
     _columns = {
+        'name': fields.char('Name', size=64, readonly=True, help='Name of the line'),
         'costs_id': fields.many2one('distribution.costs', 'Distribution Costs', required=True, ondelete='cascade', help='Distribution Costs'),
         'product_id': fields.many2one('product.product', 'Product', readonly=True, required=True, help='Invoiced product'),
         'quantity': fields.float('Quantity', readonly=True, help='Total quantity of invoiced products'),
         'weight': fields.float('Weight', help='Total weight, used for some costs'),
         'volume': fields.float('Volume', help='Total volume, used for some costs'),
         'tax_ids': fields.one2many('distribution.costs.line.tax', 'line_id', 'Taxes', readonly=True, help='Taxes use to compute cost price'),
+        'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice line', readonly=True, help='Original invoice line for this distribution costs line'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the line'),
 
         'price_total': fields.float('Price total', readonly=True, help='Total price of the products'),
@@ -232,6 +267,7 @@ class distribution_costs_line_tax(osv.osv):
         return res
 
     _columns = {
+        'name': fields.char('Name', size=64, readonly=True, help='Name of the line'),
         'line_id': fields.many2one('distribution.costs.line', 'Product Line', required=True, ondelete='cascade', help='Product line for this tax'),
         'tax_id': fields.many2one('account.tax', 'Tax', required=True, help='Tax applied on the amount'),
         'amount_tax': fields.function(_compute_tax_amount, method=True, string='Tax Amount', type='float', store=False, help='Computed tax amount'),
