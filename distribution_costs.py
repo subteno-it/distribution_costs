@@ -152,7 +152,7 @@ class distribution_costs(osv.osv):
                     for purchase_order_line in purchase_order.order_line:
                         stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
 
-                stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.price_unit}, context=context)
+                stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
 
 distribution_costs()
 
@@ -185,28 +185,23 @@ class distribution_costs_line(osv.osv):
 
             # Computed values
             tax_total = sum([data['amount_tax'] for data in tax_amounts])
-
-            coef = (price_total + fret_total + tax_total) / price_total
-            mod_coef = coef + manual_coef
-
-            cost_price_total = price_total * mod_coef
-
             price_unit = price_total / quantity
             fret_unit = fret_total / quantity
             tax_unit = tax_total / quantity
-            cost_price_unit = cost_price_total / quantity
+            cost_price = price_unit + fret_unit + tax_unit
+            coef = cost_price / price_unit
+            coef_mod = coef + manual_coef
+            cost_price_mod = price_unit * coef_mod
 
             # Return values
             res[id] = {
                 'tax_total': tax_total,
-                'cost_price_total': cost_price_total,
-
-                'coef': coef,
-
                 'price_unit': price_unit,
                 'fret_unit': fret_unit,
                 'tax_unit': tax_unit,
-                'cost_price_unit': cost_price_unit,
+                'cost_price': cost_price,
+                'coef': coef,
+                'cost_price_mod': cost_price_mod,
             }
 
         return res
@@ -225,14 +220,14 @@ class distribution_costs_line(osv.osv):
         'price_total': fields.float('Price total', readonly=True, help='Total price of the products'),
         'fret_total': fields.float('Fret', readonly=True, help='Amount of fret'),
         'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', multi='prices', store=False, help='Total tax amount'),
-        'cost_price_total': fields.function(_compute_values, method=True, string='Cost Price', type='float', multi='prices', store=False, help='Computed cost price'),
 
         'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', multi='prices', store=False, help='Amount of fret'),
         'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', multi='prices', store=False, help='Unit price of the product'),
         'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', multi='prices', store=False, help='Total tax amount'),
         'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=False, help='[Cost price / Unit price] coefficient'),
+        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', multi='prices', store=False, help='Computed cost price'),
         'manual_coef': fields.float('Modified Coefficient', help='Coefficient modifier'),
-        'cost_price_unit': fields.function(_compute_values, method=True, string='Cost Price', type='float', multi='prices', store=False, help='Computed cost price'),
+        'cost_price_mod': fields.function(_compute_values, method=True, string='Modified Cost Price', type='float', multi='prices', store=False, help='Computed cost price, with manual_coef'),
     }
 
     _defaults = {

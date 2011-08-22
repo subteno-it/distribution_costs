@@ -74,7 +74,6 @@
                                     <field name="fret_total"/>
                                     <field name="price_total"/>
                                     <field name="tax_total"/>
-                                    <field name="cost_price_total"/>
                                     <field name="invoice_line_id" groups="purchase.group_purchase_manager"/>
                                     <field name="company_id" widget="selection"/>
                                     <field name="tax_ids" colspan="4" nolabel="1">
@@ -95,8 +94,9 @@
                                     <field name="fret_unit"/>
                                     <field name="tax_unit"/>
                                     <field name="coef"/>
+                                    <field name="cost_price"/>
                                     <field name="manual_coef"/>
-                                    <field name="cost_price_unit"/>
+                                    <field name="cost_price_mod"/>
                                 </tree>
                             </field>
                         </page>
