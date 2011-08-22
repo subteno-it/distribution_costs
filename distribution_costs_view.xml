@@ -65,44 +65,37 @@
                             <field name="invoice_ids" widget="many2many" nolabel="1" domain="['|',('distribution_id','=',False),('distribution_id','=',active_id),('type','=','in_invoice')]" context="{'type':'in_invoice', 'journal_type': 'purchase'}"/>
                         </page>
                         <page string="Cost lines" attrs="{'invisible': [('state','=', 'draft')]}">
-                            <field name="line_ids" colspan="4" nolabel="1" attrs="{'readonly': [('state','not in', ('draft', 'in_progress'))]}">
+                            <field name="line_ids" colspan="4" nolabel="1">
                                 <form string="Distribution Costs Line">
                                     <field name="product_id"/>
                                     <field name="quantity"/>
                                     <field name="weight"/>
                                     <field name="volume"/>
-                                    <field name="price_unit"/>
-                                    <field name="fret"/>
-                                    <field name="total_tax"/>
-                                    <field name="cost_price"/>
-                                    <field name="coef"/>
-                                    <field name="manual_coef"/>
+                                    <field name="fret_total"/>
+                                    <field name="price_total"/>
+                                    <field name="tax_total"/>
+                                    <field name="cost_price_total"/>
                                     <field name="company_id" widget="selection"/>
                                     <field name="tax_ids" colspan="4" nolabel="1">
                                         <form string="Distribution Costs Line Tax">
                                             <field name="tax_id"/>
-                                            <field name="base_amount"/>
                                             <field name="amount_tax"/>
                                             <field name="company_id" widget="selection"/>
                                         </form>
                                         <tree string="Distribution Costs Line Tax">
                                             <field name="tax_id"/>
-                                            <field name="base_amount"/>
-                                            <field name="amount_tax"/>
+                                            <field name="amount_tax" sum="Total tax"/>
                                         </tree>
                                     </field>
                                 </form>
-                                <tree string="Distribution Costs Line">
+                                <tree string="Distribution Costs Line" editable="True">
                                     <field name="product_id"/>
-                                    <field name="quantity"/>
-                                    <field name="weight"/>
-                                    <field name="volume"/>
                                     <field name="price_unit"/>
-                                    <field name="fret"/>
-                                    <field name="total_tax"/>
-                                    <field name="cost_price"/>
+                                    <field name="fret_unit"/>
+                                    <field name="tax_unit"/>
                                     <field name="coef"/>
                                     <field name="manual_coef"/>
+                                    <field name="cost_price_unit"/>
                                 </tree>
                             </field>
                         </page>
@@ -140,7 +133,7 @@
             <field name="view_id" ref="view_distribution_costs_tree"/>
         </record>
         <menuitem id="menu_distribution_costs"
-            parent="purchase.menu_procurement_management_inventory"
+            parent="purchase.menu_procurement_management_invoice"
             sequence="20"
             action="act_open_distribution_costs_view"/>
 

@@ -25,7 +25,7 @@
 {
     'name': 'Distribution Costs',
     'version': '1.0',
-    'category': 'Custom',
+    'category': 'Generic Modules/Sales & Purchases',
     'description': """Computes average purchase price from invoices and misc costs""",
     'author': 'SYLEAM',
     'website': 'http://www.syleam.fr/',
