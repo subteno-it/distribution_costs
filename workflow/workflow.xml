@@ -53,15 +53,8 @@ write({'state': 'in_progress'})</field>
             <field name="wkf_id" ref="wkf_distribution_costs"/>
             <field name="name">confirmed</field>
             <field name="kind">function</field>
-            <field name="action">compute_cost_price()
-write({'state': 'confirmed'})</field>
-        </record>
-        <record id="wkf_act_updated" model="workflow.activity">
-            <field name="wkf_id" ref="wkf_distribution_costs"/>
-            <field name="name">updated</field>
-            <field name="kind">function</field>
             <field name="action">update_cost_price()
-write({'state': 'updated'})</field>
+write({'state': 'confirmed'})</field>
         </record>
         <record id="wkf_act_done" model="workflow.activity">
             <field name="wkf_id" ref="wkf_distribution_costs"/>
@@ -106,13 +99,8 @@ write({'state': 'updated'})</field>
             <field name="act_to" ref="wkf_act_canceled"/>
             <field name="signal">button_cancel</field>
         </record>
-        <record id="wkf_trans_confirmed_updated" model="workflow.transition">
+        <record id="wkf_trans_confirmed_done" model="workflow.transition">
             <field name="act_from" ref="wkf_act_confirmed"/>
-            <field name="act_to" ref="wkf_act_updated"/>
-            <field name="signal">button_update</field>
-        </record>
-        <record id="wkf_trans_updated_done" model="workflow.transition">
-            <field name="act_from" ref="wkf_act_updated"/>
             <field name="act_to" ref="wkf_act_done"/>
             <field name="signal">button_done</field>
         </record>

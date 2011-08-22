@@ -106,8 +106,7 @@
                         <button string="Cancel" states="draft,in_progress,confirmed" name="button_cancel" icon="gtk-cancel"/>
                         <button string="Read invoices" states="draft" name="button_progress" icon="gtk-apply"/>
                         <button string="Confirm" states="in_progress" name="button_confirm" icon="gtk-apply"/>
-                        <button string="Update" states="confirmed" name="button_update"/>
-                        <button string="Done" states="updated" name="button_done"/>
+                        <button string="Done" states="confirmed" name="button_done"/>
                     </group>
                 </form>
             </field>

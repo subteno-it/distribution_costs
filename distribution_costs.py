@@ -60,7 +60,7 @@ class distribution_costs(osv.osv):
         'weight': fields.float('Weight', readonly=True, states={'draft': [('readonly', False)]}, help='Total weight'),
         'volume': fields.float('Volume', readonly=True, states={'draft': [('readonly', False)]}, help='Total volume'),
         'weight_volume': fields.function(_compute_weight_volume, method=True, string='Weight volume', type='float', store=False, help='Weight/Volume value'),
-        'state': fields.selection([('draft', 'Draft'), ('in_progress', 'In Progress'), ('confirmed', 'Confirmed'), ('updated', 'Updated'), ('done', 'Done'), ('canceled', 'Canceled')], 'State', required=True, readonly=True, help='State of the dstribution costs case',),
+        'state': fields.selection([('draft', 'Draft'), ('in_progress', 'In Progress'), ('confirmed', 'Confirmed'), ('done', 'Done'), ('canceled', 'Canceled')], 'State', required=True, readonly=True, help='State of the dstribution costs case',),
         'invoice_ids': fields.one2many('account.invoice', 'distribution_id', 'Invoices', readonly=True, states={'draft': [('readonly', False)]}, help='List of costs invoices'),
         'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', readonly=True, states={'in_progress': [('readonly', False)]}, help='Article lines details'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the distribution cost case'),
@@ -127,24 +127,16 @@ class distribution_costs(osv.osv):
 
         return True
 
-    def compute_cost_price(self, cr, uid, ids, context=None):
-        """
-        This method does nothing in this module
-        It must be inherited by other modules
-        """
-        raise NotImplementedError(_('The compute_cost_price method is not implemented on this object !'))
-
     def update_cost_price(self, cr, uid, ids, context=None):
         """
         This method updates products costs from lines
         """
-        # TODO
-        # dist_cost_line => acc_invoice_line => acc_invoice => purchase_order => purchase_order_line => stock_move
         purchase_order_obj = self.pool.get('purchase.order')
         stock_move_obj = self.pool.get('stock.move')
 
         for distribution_costs in self.browse(cr, uid, ids, context=context):
             for dc_line in distribution_costs.line_ids:
+                # Update cost price on all moves linked to this line
                 purchase_order_ids = purchase_order_obj.search(cr, uid, [('invoice_ids', 'in', dc_line.invoice_line_id.invoice_id.id)], context=context)
                 stock_move_ids = []
                 for purchase_order_id in purchase_order_ids:
@@ -153,6 +145,9 @@ class distribution_costs(osv.osv):
                         stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
 
                 stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
+
+                # Compute the new PUMP for products that are in "distribution" cost_method
+                # TODO
 
 distribution_costs()
 
