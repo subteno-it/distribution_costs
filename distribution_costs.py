@@ -71,7 +71,7 @@ class distribution_costs(osv.osv):
         'name': lambda self, cr, uid, ids, c = None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
         'date': lambda * a: time.strftime('%Y-%m-%d %H:%M:%S'),
         'state': 'draft',
-        'company_id': lambda self ,cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
     }
 
     def read_invoices(self, cr, uid, ids, context=None):
@@ -131,7 +131,12 @@ class distribution_costs(osv.osv):
         """
         This method updates products costs from lines
         """
+        if context is None:
+            context = {}
+
         purchase_order_obj = self.pool.get('purchase.order')
+        res_currency_obj = self.pool.get('res.currency')
+        product_uom_obj = self.pool.get('product.uom')
         stock_move_obj = self.pool.get('stock.move')
 
         for distribution_costs in self.browse(cr, uid, ids, context=context):
@@ -147,7 +152,52 @@ class distribution_costs(osv.osv):
                 stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
 
                 # Compute the new PUMP for products that are in "distribution" cost_method
-                # TODO
+                # If we have modified some moves, we have to copute the new PUMP for all "new" moves on this product
+                if stock_move_ids:
+                    product = dc_line.product_id
+
+                    # Search the older modified stock move (from date of receipt)
+                    older_stock_move_id = stock_move_obj.search(cr, uid, [('id', 'in', stock_move_ids)], limit=1, order='date', context=context)[0]
+                    older_stock_move_data = stock_move_obj.read(cr, uid, older_stock_move_id, ['date'], context=context)
+
+                    # Search the previous move, to pick a right base standard_price
+                    base_stock_move_id = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('picking_id.type', '=', 'in'), ('product_id', '=', product.id), ('date', '<', older_stock_move_data['date'])], limit=1, order='date', context=context)
+                    if base_stock_move_id:
+                        base_stock_move_data = stock_move_obj.read(cr, uid, base_stock_move_id, ['last_purchase_price'], context=context)
+
+                        # If there is no quantity available, the standard_price is simply the price of the last move
+                        new_standard_price = base_stock_move_data['last_purchase_price']
+                    else:
+                        new_standard_price = 0.
+
+                    # Search all moves for this product which have been receipt after, ordered by done date
+                    done_stock_move_ids = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('picking_id.type', '=', 'in'), ('product_id', '=', product.id), ('date', '>=', older_stock_move_data['date'])], order='date', context=context)
+                    done_stock_moves = stock_move_obj.browse(cr, uid, done_stock_move_ids, context=context)
+
+                    # Retrieve starting available quantity
+                    ctx = context.copy()
+                    ctx['from_date'] = older_stock_move_data['date']
+                    available_quantity = done_stock_moves and stock_move_obj.read(cr, uid, done_stock_moves[0].product_id.id, ['qty_available'], context=ctx) or 0
+
+                    for move in done_stock_moves:
+                        # If no quantity available, standard price = unit price
+                        if available_quantity <= 0:
+                            new_standard_price = move.price_unit
+
+                        # Else, compute the new standard price
+                        else:
+                            new_standard_price = res_currency_obj.compute(cr, uid, product.currency_id.id, move.currency_id.id, new_standard_price)
+                            new_standard_price = product_uom_obj._compute_price(cr, uid, move.product_uom_id.id, new_standard_price, product.uom_id.id)
+                            amount_unit = product.price_get('standard_price', context)[product.id]
+                            new_sandard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty))/(available_quantity + move.product_qty)
+
+                        # Modify the last purchase price on all done moves after the current move
+                        stock_move_to_write = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('product_id', '=', product.id), ('date', '>=', move.date)], context=context)
+                        stock_move_obj.write(cr, uid, stock_move_to_write, {'last_purchase_price': new_standard_price}, context=context)
+                        available_quantity += move.product_qty
+
+                    # Saves the new standard price on the product
+                    dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
 
 distribution_costs()
 
@@ -226,7 +276,7 @@ class distribution_costs_line(osv.osv):
     }
 
     _defaults = {
-        'company_id': lambda self ,cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
     }
 
 distribution_costs_line()
@@ -265,7 +315,7 @@ class distribution_costs_line_tax(osv.osv):
     }
 
     _defaults = {
-        'company_id': lambda self ,cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
     }
 
 distribution_costs_line_tax()

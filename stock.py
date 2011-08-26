@@ -8,27 +8,32 @@
 #    This file is a part of distribution_costs
 #
 #    distribution_costs is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
+#    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
 #    distribution_costs is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
+#    GNU General Public License for more details.
 #
-#    You should have received a copy of the GNU Affero General Public License
+#    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
 
 
-import base
-import distribution_costs
-import account
-import product
-import stock
-import report_intrastat
-import wizard
+from osv import osv
+from osv import fields
+
+
+class stock_move(osv.osv):
+    _inherit = 'stock.move'
+
+    _columns = {
+        'last_purchase_price': fields.float('Last Purchase Price', help='Last cost price on a purchase order'),
+    }
+
+stock_move()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
