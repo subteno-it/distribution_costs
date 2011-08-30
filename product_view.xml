@@ -24,6 +24,19 @@
         #
         ##############################################################################
 
+        <record id="view_product_product_form" model="ir.ui.view">
+            <field name="name">product.product.form</field>
+            <field name="model">product.product</field>
+            <field name="type">form</field>
+            <field name="priority" eval="24"/>
+            <field name="inherit_id" ref="product.product_normal_form_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="/form/notebook/page/group/group/field[@name='standard_price']" position="attributes">
+                    <attribute name="attrs">{'readonly':[('cost_method','in',('average','distribution'))]}</attribute>
+                </xpath>
+            </field>
+        </record>
+
         <record id="view_product_category_form" model="ir.ui.view">
             <field name="name">product.category.form</field>
             <field name="model">product.category</field>
