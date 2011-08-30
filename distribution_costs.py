@@ -153,7 +153,7 @@ class distribution_costs(osv.osv):
 
                 # Compute the new PUMP for products that are in "distribution" cost_method
                 # If we have modified some moves, we have to copute the new PUMP for all "new" moves on this product
-                if stock_move_ids:
+                if dc_line.product_id.cost_method == 'distribution' and stock_move_ids:
                     product = dc_line.product_id
 
                     # Search the older modified stock move (from date of receipt)
@@ -168,7 +168,7 @@ class distribution_costs(osv.osv):
                         # If there is no quantity available, the standard_price is simply the price of the last move
                         new_standard_price = base_stock_move_data['last_purchase_price']
                     else:
-                        new_standard_price = 0.
+                        new_standard_price = dc_line.cost_price_mod
 
                     # Search all moves for this product which have been receipt after, ordered by done date
                     done_stock_move_ids = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('picking_id.type', '=', 'in'), ('product_id', '=', product.id), ('date', '>=', older_stock_move_data['date'])], order='date', context=context)
@@ -181,7 +181,7 @@ class distribution_costs(osv.osv):
 
                     for move in done_stock_moves:
                         # If no quantity available, standard price = unit price
-                        if available_quantity <= 0:
+                        if available_quantity <= 0 or new_standard_price is None:
                             new_standard_price = move.price_unit
 
                         # Else, compute the new standard price
@@ -189,7 +189,7 @@ class distribution_costs(osv.osv):
                             new_standard_price = res_currency_obj.compute(cr, uid, product.currency_id.id, move.currency_id.id, new_standard_price)
                             new_standard_price = product_uom_obj._compute_price(cr, uid, move.product_uom_id.id, new_standard_price, product.uom_id.id)
                             amount_unit = product.price_get('standard_price', context)[product.id]
-                            new_sandard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty))/(available_quantity + move.product_qty)
+                            new_sandard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
 
                         # Modify the last purchase price on all done moves after the current move
                         stock_move_to_write = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('product_id', '=', product.id), ('date', '>=', move.date)], context=context)
