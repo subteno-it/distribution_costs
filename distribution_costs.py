@@ -199,6 +199,18 @@ class distribution_costs(osv.osv):
                     # Saves the new standard price on the product
                     dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
 
+    def copy(self, cr, uid, id, default=None, context=None):
+        """
+        Inherit copy method to avoid duplicating invoices when duplicating distribution costs case
+        """
+
+        default = {
+            'invoice_ids': [],
+            'line_ids': [],
+        }
+
+        return super(distribution_costs, self).copy(cr, uid, id, default, context=context)
+
 distribution_costs()
 
 
