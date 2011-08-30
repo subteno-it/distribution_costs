@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenERP Server 6.0.2\n"
 "Report-Msgid-Bugs-To: support@openerp.com\n"
-"POT-Creation-Date: 2011-08-22 15:18+0000\n"
-"PO-Revision-Date: 2011-08-22 17:21+0100\n"
+"POT-Creation-Date: 2011-08-30 07:39+0000\n"
+"PO-Revision-Date: 2011-08-30 09:47+0100\n"
 "Last-Translator: Sylvain Garancher <sylvain.garancher@syleam.fr>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -54,11 +54,6 @@ msgid "Company"
 msgstr "Société"
 
 #. module: distribution_costs
-#: view:distribution.costs:0
-msgid "Update"
-msgstr "Mettre à jour"
-
-#. module: distribution_costs
 #: help:distribution.costs,date:0
 msgid "Date of the case"
 msgstr "Date du dossier"
@@ -73,12 +68,6 @@ msgstr "Liste des factures de coûts"
 #: model:ir.model,name:distribution_costs.model_distribution_costs_line
 msgid "Distribution Costs Line"
 msgstr "Ligne de coût de distribution"
-
-#. module: distribution_costs
-#: code:addons/distribution_costs/distribution_costs.py:135
-#, python-format
-msgid "The compute_cost_price method is not implemented on this object !"
-msgstr "La méthode compute_cost_price n'est pas implémentée pour cet objet !"
 
 #. module: distribution_costs
 #: help:distribution.costs.line.tax,company_id:0
@@ -116,6 +105,16 @@ msgstr "Code douanier appliqué à la catégorie"
 #: model:ir.model,name:distribution_costs.model_report_intrastat_code
 msgid "Intrastat code"
 msgstr "Code douanier"
+
+#. module: distribution_costs
+#: constraint:stock.move:0
+msgid "You try to assign a lot which is not from the same product"
+msgstr "Vous tentez d'attribuer un lot qui n'est pas sur le même produit"
+
+#. module: distribution_costs
+#: model:ir.model,name:distribution_costs.model_stock_move
+msgid "Stock Move"
+msgstr "Mouvement de stock"
 
 #. module: distribution_costs
 #: field:distribution.costs.line,tax_total:0
@@ -334,9 +333,9 @@ msgid "Draft"
 msgstr "Brouillon"
 
 #. module: distribution_costs
-#: selection:distribution.costs,state:0
-msgid "Updated"
-msgstr "Mis à jour"
+#: help:stock.move,last_purchase_price:0
+msgid "Last cost price on a purchase order"
+msgstr "Dernier prix d'achat sur une commande"
 
 #. module: distribution_costs
 #: help:distribution.costs,line_ids:0
@@ -364,9 +363,9 @@ msgid "Companies"
 msgstr "Sociétés"
 
 #. module: distribution_costs
-#: help:account.invoice,distribution:0
-msgid "Check if this invoice is a distribution invoice"
-msgstr "Cocher si cette facture est une facture de fret"
+#: field:stock.move,last_purchase_price:0
+msgid "Last Purchase Price"
+msgstr "Dernier prix d'achat"
 
 #. module: distribution_costs
 #: code:addons/distribution_costs/distribution_costs.py:105
@@ -438,6 +437,11 @@ msgstr "En cours"
 #: help:account.invoice,distribution_id:0
 msgid "Associated distribution costs case"
 msgstr "Dossier de coûts de distribution associé"
+
+#. module: distribution_costs
+#: constraint:stock.move:0
+msgid "You must assign a production lot for this product"
+msgstr "Vous devez attribuer un lot de production pour ce produit"
 
 #. module: distribution_costs
 #: help:distribution.costs.line,coef:0
@@ -530,6 +534,11 @@ msgid "State of the dstribution costs case"
 msgstr "État du dossier de coûts de distribution"
 
 #. module: distribution_costs
+#: help:account.invoice,distribution:0
+msgid "Check if this invoice is a distribution invoice"
+msgstr "Cocher si cette facture est une facture de fret"
+
+#. module: distribution_costs
 #: help:product.category,fret:0
 msgid "Check if this category is used to compute fret amount"
 msgstr "Cocher si la catégorie est utilisée pour calculer des montants de fret"
@@ -549,76 +558,7 @@ msgstr "Valeur du poids volumétrique"
 msgid "Shipping company"
 msgstr "Compagnie maritime"
 
-#~ msgid "Base Amount"
-#~ msgstr "Montant de base"
-#~ msgid "Base amount used to compute the tax"
-#~ msgstr "Prix de base pour calculer la valeur des taxes"
-#~ msgid ""
-#~ "Intrastat code not found on product %s !' % product_id.name))\n"
-#~ "\n"
-#~ "            # Retrieve taxes for this line from intrastat code\n"
-#~ "            tax_data = []\n"
-#~ "            for tax_id in intrastat_id.tax_ids:\n"
-#~ "                tax_data.append((0, 0, {'tax_id': tax_id.id}))\n"
-#~ "\n"
-#~ "            data_list.append({\n"
-#~ "                'costs_id': invoice_line.invoice_id.distribution_id.id,\n"
-#~ "                'product_id': product_id.id,\n"
-#~ "                'fret': fret_amount * product_amount / invoice_line."
-#~ "quantity / invoice_line.price_subtotal,\n"
-#~ "                'quantity': invoice_line.quantity,\n"
-#~ "                'volume': product_id.volume,\n"
-#~ "                'weight': product_id.weight,\n"
-#~ "                'price_unit': invoice_line.price_unit,\n"
-#~ "                'tax_ids': tax_data,\n"
-#~ "                'company_id': invoice_line.invoice_id.distribution_id."
-#~ "company_id.id,\n"
-#~ "            })\n"
-#~ "\n"
-#~ "        # Create lines\n"
-#~ "        for data in data_list:\n"
-#~ "            new_id = distribution_costs_line_obj.create(cr, uid, data, "
-#~ "context=context)\n"
-#~ "\n"
-#~ "    def compute_cost_price(self, cr, uid, ids, context=None):\n"
-#~ "        \"\"\"\n"
-#~ "        This method does nothing in this module\n"
-#~ "        It must be inherited by other modules\n"
-#~ "        \"\"\"\n"
-#~ "        raise NotImplementedError(_('The compute_cost_price method is not "
-#~ "implemented on this object !"
-#~ msgstr ""
-#~ "Intrastat code not found on product %s !' % product_id.name))\n"
-#~ "\n"
-#~ "            # Retrieve taxes for this line from intrastat code\n"
-#~ "            tax_data = []\n"
-#~ "            for tax_id in intrastat_id.tax_ids:\n"
-#~ "                tax_data.append((0, 0, {'tax_id': tax_id.id}))\n"
-#~ "\n"
-#~ "            data_list.append({\n"
-#~ "                'costs_id': invoice_line.invoice_id.distribution_id.id,\n"
-#~ "                'product_id': product_id.id,\n"
-#~ "                'fret': fret_amount * product_amount / invoice_line."
-#~ "quantity / invoice_line.price_subtotal,\n"
-#~ "                'quantity': invoice_line.quantity,\n"
-#~ "                'volume': product_id.volume,\n"
-#~ "                'weight': product_id.weight,\n"
-#~ "                'price_unit': invoice_line.price_unit,\n"
-#~ "                'tax_ids': tax_data,\n"
-#~ "                'company_id': invoice_line.invoice_id.distribution_id."
-#~ "company_id.id,\n"
-#~ "            })\n"
-#~ "\n"
-#~ "        # Create lines\n"
-#~ "        for data in data_list:\n"
-#~ "            new_id = distribution_costs_line_obj.create(cr, uid, data, "
-#~ "context=context)\n"
-#~ "\n"
-#~ "    def compute_cost_price(self, cr, uid, ids, context=None):\n"
-#~ "        \"\"\"\n"
-#~ "        This method does nothing in this module\n"
-#~ "        It must be inherited by other modules\n"
-#~ "        \"\"\"\n"
-#~ "        raise NotImplementedError(_('The compute_cost_price method is not "
-#~ "implemented on this object !"
-
+#. module: product
+#: selection:product.template,cost_method:0
+msgid "Average Price (Distribution)"
+msgstr "Prix moyen (Distribution)"

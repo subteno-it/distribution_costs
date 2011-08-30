@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenERP Server 6.0.2\n"
 "Report-Msgid-Bugs-To: support@openerp.com\n"
-"POT-Creation-Date: 2011-08-22 15:18+0000\n"
-"PO-Revision-Date: 2011-08-22 15:18+0000\n"
+"POT-Creation-Date: 2011-08-30 07:39+0000\n"
+"PO-Revision-Date: 2011-08-30 07:39+0000\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -54,11 +54,6 @@ msgid "Company"
 msgstr ""
 
 #. module: distribution_costs
-#: view:distribution.costs:0
-msgid "Update"
-msgstr ""
-
-#. module: distribution_costs
 #: help:distribution.costs,date:0
 msgid "Date of the case"
 msgstr ""
@@ -72,12 +67,6 @@ msgstr ""
 #: view:distribution.costs:0
 #: model:ir.model,name:distribution_costs.model_distribution_costs_line
 msgid "Distribution Costs Line"
-msgstr ""
-
-#. module: distribution_costs
-#: code:addons/distribution_costs/distribution_costs.py:135
-#, python-format
-msgid "The compute_cost_price method is not implemented on this object !"
 msgstr ""
 
 #. module: distribution_costs
@@ -115,6 +104,16 @@ msgstr ""
 #. module: distribution_costs
 #: model:ir.model,name:distribution_costs.model_report_intrastat_code
 msgid "Intrastat code"
+msgstr ""
+
+#. module: distribution_costs
+#: constraint:stock.move:0
+msgid "You try to assign a lot which is not from the same product"
+msgstr ""
+
+#. module: distribution_costs
+#: model:ir.model,name:distribution_costs.model_stock_move
+msgid "Stock Move"
 msgstr ""
 
 #. module: distribution_costs
@@ -334,8 +333,8 @@ msgid "Draft"
 msgstr ""
 
 #. module: distribution_costs
-#: selection:distribution.costs,state:0
-msgid "Updated"
+#: help:stock.move,last_purchase_price:0
+msgid "Last cost price on a purchase order"
 msgstr ""
 
 #. module: distribution_costs
@@ -364,8 +363,8 @@ msgid "Companies"
 msgstr ""
 
 #. module: distribution_costs
-#: help:account.invoice,distribution:0
-msgid "Check if this invoice is a distribution invoice"
+#: field:stock.move,last_purchase_price:0
+msgid "Last Purchase Price"
 msgstr ""
 
 #. module: distribution_costs
@@ -437,6 +436,11 @@ msgstr ""
 #. module: distribution_costs
 #: help:account.invoice,distribution_id:0
 msgid "Associated distribution costs case"
+msgstr ""
+
+#. module: distribution_costs
+#: constraint:stock.move:0
+msgid "You must assign a production lot for this product"
 msgstr ""
 
 #. module: distribution_costs
@@ -527,6 +531,11 @@ msgstr ""
 #. module: distribution_costs
 #: help:distribution.costs,state:0
 msgid "State of the dstribution costs case"
+msgstr ""
+
+#. module: distribution_costs
+#: help:account.invoice,distribution:0
+msgid "Check if this invoice is a distribution invoice"
 msgstr ""
 
 #. module: distribution_costs

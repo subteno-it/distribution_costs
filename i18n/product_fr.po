@@ -1,0 +1,5 @@
+#. module: product
+#: selection:product.template,cost_method:0
+msgid "Average Price (Distribution)"
+msgstr "Prix moyen (Distribution)"
+
