@@ -32,7 +32,7 @@
             <field name="inherit_id" ref="base.view_company_form"/>
             <field name="arch" type="xml">
                 <xpath expr="/form/notebook/page[@string='Configuration']" position="inside">
-                    <group colspan="4" col="2">
+                    <group colspan="2" col="2">
                         <separator string="Weight/Volume formula" colspan="2"/>
                         <field name="weight_volume_formula" nolabel="1" colspan="2"/>
                         <label string="(Format : result = formula / Variables : weight, volume)" colspan="2"/>
