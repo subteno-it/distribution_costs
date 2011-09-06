@@ -83,13 +83,13 @@ class distribution_costs(osv.osv):
         product_template_obj = self.pool.get('product.template')
 
         # Retrieve fret invoice lines
-        fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', True), ('product_id.categ_id.fret', '=', True)], context=context)
+        fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.state', 'not in', ('draft', 'cancel')), ('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', True), ('product_id.categ_id.fret', '=', True)], context=context)
         # Compute total fret amount
         fret_amount = account_invoice_line_obj.read(cr, uid, fret_invoice_line_ids, ['price_subtotal'], context=context)
         fret_amount = sum([data['price_subtotal'] for data in fret_amount])
 
         # Retrieve product invoice lines
-        product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', False), ('product_id.categ_id.fret', '=', False)], context=context)
+        product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.state', 'not in', ('draft', 'cancel')), ('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', False), ('product_id.categ_id.fret', '=', False)], context=context)
         # Compute total product amount
         product_amount = account_invoice_line_obj.read(cr, uid, product_invoice_line_ids, ['price_subtotal'], context=context)
         product_amount = sum([data['price_subtotal'] for data in product_amount])
@@ -120,6 +120,9 @@ class distribution_costs(osv.osv):
                 'tax_ids': tax_data,
                 'invoice_line_id': invoice_line.id,
             })
+
+        if data_list == []:
+            raise osv.except_osv(_('Error'), _('No valid line found, please select valid invoices !'))
 
         # Create lines
         for data in data_list:
