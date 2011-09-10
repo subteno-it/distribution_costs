@@ -4,6 +4,7 @@
 #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
 #    Copyright (C) 2011 SYLEAM Info Services (<http://www.Syleam.fr/>)
 #              Sylvain Garancher <sylvain.garancher@syleam.fr>
+#              Sebastien LANGE <sebastien.lange@syleam.fr>
 #
 #    This file is a part of distribution_costs
 #
@@ -137,6 +138,7 @@ class distribution_costs(osv.osv):
         if context is None:
             context = {}
 
+        product_obj = self.pool.get('product.product')
         purchase_order_obj = self.pool.get('purchase.order')
         res_currency_obj = self.pool.get('res.currency')
         product_uom_obj = self.pool.get('product.uom')
@@ -146,11 +148,11 @@ class distribution_costs(osv.osv):
             for dc_line in distribution_costs.line_ids:
                 # Update cost price on all moves linked to this line
                 purchase_order_ids = purchase_order_obj.search(cr, uid, [('invoice_ids', 'in', dc_line.invoice_line_id.invoice_id.id)], context=context)
-                stock_move_ids = []
-                for purchase_order_id in purchase_order_ids:
-                    purchase_order = purchase_order_obj.browse(cr, uid, purchase_order_id, context=context)
-                    for purchase_order_line in purchase_order.order_line:
-                        stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
+                stock_move_ids = stock_move_obj.search(cr, uid, [('invoice_line_id', '=', dc_line.invoice_line_id.id)], context=context)
+                if purchase_order_ids:
+                    for purchase_order in purchase_order_obj.browse(cr, uid, purchase_order_ids, context=context):
+                        for purchase_order_line in purchase_order.order_line:
+                            stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
 
                 stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
 
@@ -180,7 +182,7 @@ class distribution_costs(osv.osv):
                     # Retrieve starting available quantity
                     ctx = context.copy()
                     ctx['from_date'] = older_stock_move_data['date']
-                    available_quantity = done_stock_moves and stock_move_obj.read(cr, uid, done_stock_moves[0].product_id.id, ['qty_available'], context=ctx) or 0
+                    available_quantity = product_obj.read(cr, uid, [product.id], ['qty_available'], context=ctx)[0]['qty_available'] or 0
 
                     for move in done_stock_moves:
                         # If no quantity available, standard price = unit price
@@ -189,10 +191,10 @@ class distribution_costs(osv.osv):
 
                         # Else, compute the new standard price
                         else:
-                            new_standard_price = res_currency_obj.compute(cr, uid, product.currency_id.id, move.currency_id.id, new_standard_price)
-                            new_standard_price = product_uom_obj._compute_price(cr, uid, move.product_uom_id.id, new_standard_price, product.uom_id.id)
+                            new_standard_price = res_currency_obj.compute(cr, uid, dc_line.invoice_line_id.invoice_id.currency_id.id, move.company_id.currency_id.id, new_standard_price)
+                            new_standard_price = product_uom_obj._compute_price(cr, uid, move.product_uom.id, new_standard_price, product.uom_id.id)
                             amount_unit = product.price_get('standard_price', context)[product.id]
-                            new_sandard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
+                            new_standard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
 
                         # Modify the last purchase price on all done moves after the current move
                         stock_move_to_write = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('product_id', '=', product.id), ('date', '>=', move.date)], context=context)
