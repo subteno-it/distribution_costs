@@ -326,7 +326,7 @@ msgstr "Brouillon"
 #. module: distribution_costs
 #: model:ir.actions.act_window,name:distribution_costs.act_open_disttribution_costs_line
 msgid "Distribution Costs line"
-msgstr "Distribution Costs line"
+msgstr "Ligne de coût de distribution"
 
 #. module: distribution_costs
 #: help:stock.move,last_purchase_price:0
@@ -352,7 +352,7 @@ msgstr "Date"
 #: view:distribution.costs.line:0
 #: field:distribution.costs.line,cost_price:0
 msgid "Cost Price"
-msgstr "Cost Price"
+msgstr "Prix de revient"
 
 #. module: distribution_costs
 #: model:ir.model,name:distribution_costs.model_res_company
@@ -448,7 +448,7 @@ msgstr "Coefficient modifié"
 #: view:distribution.costs.line:0
 #: field:distribution.costs.line,cost_price_mod:0
 msgid "Modified Cost Price"
-msgstr "Modified Cost Price"
+msgstr "Prix de revient modifié"
 
 #. module: distribution_costs
 #: help:distribution.costs.line,name:0
