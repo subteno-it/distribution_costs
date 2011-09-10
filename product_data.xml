@@ -36,5 +36,11 @@
             <field name="fret" eval="True"/>
         </record>
 
+        <act_window id="act_open_disttribution_costs_line"
+            name="Distribution cost lines"
+            res_model="distribution.costs.line"
+            src_model="product.product"
+            domain="[('product_id', '=', active_id)]"/>
+
     </data>
 </openerp>
