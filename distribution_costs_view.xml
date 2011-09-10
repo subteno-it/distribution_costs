@@ -143,7 +143,7 @@
             <field name="type">tree</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
-                <tree string="Distribution Costs Line" readonly="1">
+                <tree string="Distribution Costs Line">
                     <field name="product_id"/>
                     <field name="price_unit"/>
                     <field name="fret_unit"/>
@@ -162,17 +162,17 @@
             <field name="type">form</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
-            <form string="Distribution Costs Line" readonly="1">
-                <field name="product_id"/>
-                <field name="quantity"/>
-                <field name="weight"/>
-                <field name="volume"/>
-                <field name="fret_total"/>
-                <field name="price_total"/>
-                <field name="tax_total"/>
-                <field name="invoice_line_id" groups="purchase.group_purchase_manager"/>
-                <field name="company_id" widget="selection"/>
-                <field name="tax_ids" colspan="4" nolabel="1">
+            <form string="Distribution Costs Line">
+                <field name="product_id" readonly="1"/>
+                <field name="quantity" readonly="1"/>
+                <field name="weight" readonly="1"/>
+                <field name="volume" readonly="1"/>
+                <field name="fret_total" readonly="1"/>
+                <field name="price_total" readonly="1"/>
+                <field name="tax_total" readonly="1"/>
+                <field name="invoice_line_id" groups="purchase.group_purchase_manager" readonly="1"/>
+                <field name="company_id" widget="selection" readonly="1"/>
+                <field name="tax_ids" colspan="4" nolabel="1" readonly="1">
                     <form string="Distribution Costs Line Tax">
                         <field name="tax_id"/>
                         <field name="amount_tax"/>
