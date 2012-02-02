@@ -24,9 +24,12 @@
 
 {
     'name': 'Distribution Costs',
-    'version': '1.0',
+    'version': '1.1',
     'category': 'Generic Modules/Sales & Purchases',
-    'description': """Computes average purchase price from invoices and misc costs""",
+    'description': """Computes average purchase price from invoices and misc costs
+
+Use l10n_fr_intrastat_product module from Akretion.
+This module replace report_intrastat and it's available to lp:new-report-intrastat.""",
     'author': 'SYLEAM',
     'website': 'http://www.syleam.fr/',
     'depends': [
@@ -34,7 +37,7 @@
         'product',
         'purchase',
         'stock',
-        'report_intrastat',
+        'l10n_fr_intrastat_product',
     ],
     'init_xml': [],
     'images': [],
