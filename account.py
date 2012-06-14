@@ -35,6 +35,21 @@ class account_invoice(osv.osv):
         'distribution_id': fields.many2one('distribution.costs', 'Distribution Cost', help='Associated distribution costs case'),
     }
 
+    _defaults = {
+        'distribution': False,
+    }
+
+    def copy(self, cr, uid, id, default=None, context=None):
+        """
+        Empty distribution_id field
+        """
+        if default is None:
+            default = {}
+        default.update({
+            'distribution_id': False,
+        })
+        return super(account_invoice, self).copy(cr, uid, id, default, context=context)
+
 account_invoice()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
