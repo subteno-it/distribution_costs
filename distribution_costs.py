@@ -81,19 +81,26 @@ class distribution_costs(osv.osv):
         """
         distribution_costs_line_obj = self.pool.get('distribution.costs.line')
         account_invoice_line_obj = self.pool.get('account.invoice.line')
-        product_template_obj = self.pool.get('product.template')
 
         # Retrieve fret invoice lines
-        fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.state', 'not in', ('draft', 'cancel')), ('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', True), ('product_id.categ_id.fret', '=', True)], context=context)
+        fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [
+            ('invoice_id.state', 'not in', ('draft', 'cancel')),
+            ('invoice_id.distribution_id', 'in', ids),
+            ('invoice_id.distribution', '=', True),
+            ('product_id.categ_id.fret', '=', True)
+        ], context=context)
         # Compute total fret amount
-        fret_amount = account_invoice_line_obj.read(cr, uid, fret_invoice_line_ids, ['price_subtotal'], context=context)
-        fret_amount = sum([data['price_subtotal'] for data in fret_amount])
+        fret_amount = sum(fret.price_subtotal for fret in account_invoice_line_obj.browse(cr, uid, fret_invoice_line_ids, context=context))
 
         # Retrieve product invoice lines
-        product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [('invoice_id.state', 'not in', ('draft', 'cancel')), ('invoice_id.distribution_id', 'in', ids), ('invoice_id.distribution', '=', False), ('product_id.categ_id.fret', '=', False)], context=context)
+        product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [
+            ('invoice_id.state', 'not in', ('draft', 'cancel')),
+            ('invoice_id.distribution_id', 'in', ids),
+            ('invoice_id.distribution', '=', False),
+            ('product_id.categ_id.fret', '=', False)
+        ], context=context)
         # Compute total product amount
-        product_amount = account_invoice_line_obj.read(cr, uid, product_invoice_line_ids, ['price_subtotal'], context=context)
-        product_amount = sum([data['price_subtotal'] for data in product_amount])
+        product_amount = sum(fret.price_subtotal for fret in account_invoice_line_obj.browse(cr, uid, product_invoice_line_ids, context=context))
 
         # Compute lines data
         data_list = []
@@ -127,7 +134,7 @@ class distribution_costs(osv.osv):
 
         # Create lines
         for data in data_list:
-            new_id = distribution_costs_line_obj.create(cr, uid, data, context=context)
+            distribution_costs_line_obj.create(cr, uid, data, context=context)
 
         return True
 
@@ -163,26 +170,34 @@ class distribution_costs(osv.osv):
 
                     # Search the older modified stock move (from date of receipt)
                     older_stock_move_id = stock_move_obj.search(cr, uid, [('id', 'in', stock_move_ids)], limit=1, order='date', context=context)[0]
-                    older_stock_move_data = stock_move_obj.read(cr, uid, older_stock_move_id, ['date'], context=context)
+                    older_stock_move = stock_move_obj.browse(cr, uid, older_stock_move_id, context=context)
 
                     # Search the previous move, to pick a right base standard_price
-                    base_stock_move_id = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('picking_id.type', '=', 'in'), ('product_id', '=', product.id), ('date', '<', older_stock_move_data['date'])], limit=1, order='date', context=context)
+                    base_stock_move_id = stock_move_obj.search(cr, uid, [
+                        ('state', '=', 'done'),
+                        ('picking_id.type', '=', 'in'),
+                        ('product_id', '=', product.id),
+                        ('date', '<', older_stock_move.date)
+                    ], limit=1, order='date', context=context)
                     if base_stock_move_id:
-                        base_stock_move_data = stock_move_obj.read(cr, uid, base_stock_move_id, ['last_purchase_price'], context=context)
-
                         # If there is no quantity available, the standard_price is simply the price of the last move
-                        new_standard_price = base_stock_move_data['last_purchase_price']
+                        new_standard_price = stock_move_obj.browse(cr, uid, base_stock_move_id, context=context).last_purchase_price
                     else:
                         new_standard_price = dc_line.cost_price_mod
 
                     # Search all moves for this product which have been receipt after, ordered by done date
-                    done_stock_move_ids = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('picking_id.type', '=', 'in'), ('product_id', '=', product.id), ('date', '>=', older_stock_move_data['date'])], order='date', context=context)
+                    done_stock_move_ids = stock_move_obj.search(cr, uid, [
+                        ('state', '=', 'done'),
+                        ('picking_id.type', '=', 'in'),
+                        ('product_id', '=', product.id),
+                        ('date', '>=', older_stock_move.date)
+                    ], order='date', context=context)
                     done_stock_moves = stock_move_obj.browse(cr, uid, done_stock_move_ids, context=context)
 
                     # Retrieve starting available quantity
                     ctx = context.copy()
-                    ctx['from_date'] = older_stock_move_data['date']
-                    available_quantity = product_obj.read(cr, uid, [product.id], ['qty_available'], context=ctx)[0]['qty_available'] or 0
+                    ctx['from_date'] = older_stock_move.date
+                    available_quantity = product_obj.browse(cr, uid, product.id, context=context).qty_available or 0
 
                     for move in done_stock_moves:
                         # If no quantity available, standard price = unit price
@@ -197,7 +212,11 @@ class distribution_costs(osv.osv):
                             new_standard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
 
                         # Modify the last purchase price on all done moves after the current move
-                        stock_move_to_write = stock_move_obj.search(cr, uid, [('state', '=', 'done'), ('product_id', '=', product.id), ('date', '>=', move.date)], context=context)
+                        stock_move_to_write = stock_move_obj.search(cr, uid, [
+                            ('state', '=', 'done'),
+                            ('product_id', '=', product.id),
+                            ('date', '>=', move.date)
+                        ], context=context)
                         stock_move_obj.write(cr, uid, stock_move_to_write, {'last_purchase_price': new_standard_price}, context=context)
                         available_quantity += move.product_qty
 
@@ -230,33 +249,24 @@ class distribution_costs_line(osv.osv):
         distribution_costs_line_tax_obj = self.pool.get('distribution.costs.line.tax')
 
         # Retrieve data from the line
-        lines_data = self.read(cr, uid, ids, ['price_total', 'manual_coef', 'fret_total', 'quantity'], context=context)
 
         res = {}
-        for line_data in lines_data:
-            # Base values
-            id = line_data['id']
-            price_total = line_data['price_total']
-            manual_coef = line_data['manual_coef']
-            fret_total = line_data['fret_total']
-            quantity = line_data['quantity']
-
+        for line in self.browse(cr, uid, ids, context=context):
             # Retrieve data from the tax lines
-            distribution_costs_line_tax_ids = distribution_costs_line_tax_obj.search(cr, uid, [('line_id', '=', id)], context=context)
-            tax_amounts = distribution_costs_line_tax_obj.read(cr, uid, distribution_costs_line_tax_ids, ['amount_tax'], context=context)
+            distribution_costs_line_tax_ids = distribution_costs_line_tax_obj.search(cr, uid, [('line_id', '=', line.id)], context=context)
 
             # Computed values
-            tax_total = sum([data['amount_tax'] for data in tax_amounts])
-            price_unit = price_total / quantity
-            fret_unit = fret_total / quantity
-            tax_unit = tax_total / quantity
+            tax_total = sum(tax_line.amount_tax for tax_line in distribution_costs_line_tax_obj.browse(cr, uid, distribution_costs_line_tax_ids, context=context))
+            price_unit = line.price_total / line.quantity
+            fret_unit = line.fret_total / line.quantity
+            tax_unit = tax_total / line.quantity
             cost_price = price_unit + fret_unit + tax_unit
             coef = cost_price / price_unit
-            coef_mod = coef + manual_coef
+            coef_mod = coef + line.manual_coef
             cost_price_mod = price_unit * coef_mod
 
             # Return values
-            res[id] = {
+            res[line.id] = {
                 'tax_total': tax_total,
                 'price_unit': price_unit,
                 'fret_unit': fret_unit,
