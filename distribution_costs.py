@@ -28,6 +28,7 @@ from osv import osv
 from osv import fields
 from tools.translate import _
 import time
+import decimal_precision as dp
 
 
 class distribution_costs(osv.osv):
@@ -66,6 +67,7 @@ class distribution_costs(osv.osv):
         'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', readonly=True, states={'in_progress': [('readonly', False)]}, help='Article lines details'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the distribution cost case'),
         'product_id': fields.related('line_ids', 'product_id', type='many2one', relation='product.product', string='Product', help='Products of the lines, used for search view'),
+        'fret_amount': fields.float('Fret Amount', digits_compute=dp.get_precision('Account'), help="If we haven't invoice's fret, we can used this field"),
     }
 
     _defaults = {
@@ -75,6 +77,7 @@ class distribution_costs(osv.osv):
         'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
         'weight': 0.0,
         'volume': 0.0,
+        'fret_amount': 0.0,
     }
 
     def read_invoices(self, cr, uid, ids, context=None):
@@ -83,6 +86,8 @@ class distribution_costs(osv.osv):
         """
         distribution_costs_line_obj = self.pool.get('distribution.costs.line')
         account_invoice_line_obj = self.pool.get('account.invoice.line')
+        res_currency_obj = self.pool.get('res.currency')
+        distribution_costs = self.browse(cr, uid, ids[0], context=context)
 
         # Retrieve fret invoice lines
         fret_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [
@@ -92,7 +97,9 @@ class distribution_costs(osv.osv):
             ('product_id.categ_id.fret', '=', True)
         ], context=context)
         # Compute total fret amount
-        fret_amount = sum(fret.price_subtotal for fret in account_invoice_line_obj.browse(cr, uid, fret_invoice_line_ids, context=context))
+        fret_amount = distribution_costs.fret_amount
+        for line in account_invoice_line_obj.browse(cr, uid, fret_invoice_line_ids, context=context):
+            fret_amount += res_currency_obj.compute(cr, uid, line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, line.price_subtotal)
 
         # Retrieve product invoice lines
         product_invoice_line_ids = account_invoice_line_obj.search(cr, uid, [
@@ -102,7 +109,9 @@ class distribution_costs(osv.osv):
             ('product_id.categ_id.fret', '=', False)
         ], context=context)
         # Compute total product amount
-        product_amount = sum(fret.price_subtotal for fret in account_invoice_line_obj.browse(cr, uid, product_invoice_line_ids, context=context))
+        product_amount = 0.
+        for line in account_invoice_line_obj.browse(cr, uid, product_invoice_line_ids, context=context):
+            product_amount += res_currency_obj.compute(cr, uid, line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, line.price_subtotal)
 
         # Compute lines data
         data_list = []
@@ -111,13 +120,12 @@ class distribution_costs(osv.osv):
 
             # Retrieve intrastat_id, raise if not found
             intrastat_id = product_id.intrastat_id or product_id.categ_id and product_id.categ_id.intrastat_id
-            if not intrastat_id:
-                raise osv.except_osv(_('Error'), _('Intrastat code not found on product %s !') % product_id.name)
 
             # Retrieve taxes for this line from intrastat code
             tax_data = []
-            for tax_id in intrastat_id.tax_ids:
-                tax_data.append((0, 0, {'tax_id': tax_id.id}))
+            if intrastat_id:
+                for tax_id in intrastat_id.tax_ids:
+                    tax_data.append((0, 0, {'tax_id': tax_id.id}))
 
             data_list.append({
                 'costs_id': invoice_line.invoice_id.distribution_id.id,
@@ -198,7 +206,7 @@ class distribution_costs(osv.osv):
 
                     # Retrieve starting available quantity
                     ctx = context.copy()
-                    ctx['from_date'] = older_stock_move.date
+                    ctx['to_date'] = older_stock_move.date
                     available_quantity = product_obj.browse(cr, uid, product.id, context=context).qty_available or 0
 
                     for move in done_stock_moves:
@@ -291,17 +299,17 @@ class distribution_costs_line(osv.osv):
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice line', readonly=True, help='Original invoice line for this distribution costs line'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the line'),
 
-        'price_total': fields.float('Price total', readonly=True, help='Total price of the products'),
-        'fret_total': fields.float('Fret', readonly=True, help='Amount of fret'),
-        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', multi='prices', store=False, help='Total tax amount'),
+        'price_total': fields.float('Price total', readonly=True, digits_compute=dp.get_precision('Account'),  help='Total price of the products'),
+        'fret_total': fields.float('Fret', readonly=True, digits_compute=dp.get_precision('Account'), help='Amount of fret'),
+        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=False, help='Total tax amount'),
 
-        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', multi='prices', store=False, help='Amount of fret'),
-        'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', multi='prices', store=False, help='Unit price of the product'),
-        'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', multi='prices', store=False, help='Total tax amount'),
+        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=False, help='Amount of fret'),
+        'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Unit price of the product'),
+        'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Total tax amount'),
         'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=False, help='[Cost price / Unit price] coefficient'),
-        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', multi='prices', store=False, help='Computed cost price'),
+        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Computed cost price'),
         'manual_coef': fields.float('Modified Coefficient', help='Coefficient modifier'),
-        'cost_price_mod': fields.function(_compute_values, method=True, string='Modified Cost Price', type='float', multi='prices', store=False, help='Computed cost price, with manual_coef'),
+        'cost_price_mod': fields.function(_compute_values, method=True, string='Modified Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Computed cost price, with manual_coef'),
     }
 
     _defaults = {
@@ -345,7 +353,7 @@ class distribution_costs_line_tax(osv.osv):
         'name': fields.char('Name', size=64, readonly=True, help='Name of the line'),
         'line_id': fields.many2one('distribution.costs.line', 'Product Line', required=True, ondelete='cascade', help='Product line for this tax'),
         'tax_id': fields.many2one('account.tax', 'Tax', required=True, help='Tax applied on the amount'),
-        'amount_tax': fields.function(_compute_tax_amount, method=True, string='Tax Amount', type='float', store=False, help='Computed tax amount'),
+        'amount_tax': fields.function(_compute_tax_amount, method=True, string='Tax Amount', type='float', digits_compute=dp.get_precision('Account'), store=False, help='Computed tax amount'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the line tax'),
     }
 
