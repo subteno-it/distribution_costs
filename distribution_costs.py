@@ -67,7 +67,7 @@ class distribution_costs(osv.osv):
         'line_ids': fields.one2many('distribution.costs.line', 'costs_id', 'Invoices list', readonly=True, states={'in_progress': [('readonly', False)]}, help='Article lines details'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the distribution cost case'),
         'product_id': fields.related('line_ids', 'product_id', type='many2one', relation='product.product', string='Product', help='Products of the lines, used for search view'),
-        'fret_amount': fields.float('Fret Amount', digits_compute=dp.get_precision('Account'), help="If we haven't invoice's fret, we can used this field"),
+        'fret_amount': fields.float('Fret Amount', digits_compute=dp.get_precision('Account'), readonly=True, states={'draft': [('readonly', False)]}, help="If we haven't invoice's fret, we can used this field"),
     }
 
     _defaults = {
@@ -127,14 +127,17 @@ class distribution_costs(osv.osv):
                 for tax_id in intrastat_id.tax_ids:
                     tax_data.append((0, 0, {'tax_id': tax_id.id}))
 
+            line_price_subtotal = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_subtotal)
+            line_price_unit = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_unit)
+
             data_list.append({
                 'costs_id': invoice_line.invoice_id.distribution_id.id,
                 'product_id': product_id.id,
-                'fret_total': fret_amount * invoice_line.price_subtotal / product_amount,
+                'fret_total': fret_amount * line_price_subtotal / product_amount,
                 'quantity': invoice_line.quantity,
                 'volume': product_id.volume * invoice_line.quantity,
                 'weight': product_id.weight * invoice_line.quantity,
-                'price_total': invoice_line.price_unit * invoice_line.quantity,
+                'price_total': line_price_unit * invoice_line.quantity,
                 'tax_ids': tax_data,
                 'invoice_line_id': invoice_line.id,
             })
@@ -183,15 +186,15 @@ class distribution_costs(osv.osv):
                     older_stock_move = stock_move_obj.browse(cr, uid, older_stock_move_id, context=context)
 
                     # Search the previous move, to pick a right base standard_price
-                    base_stock_move_id = stock_move_obj.search(cr, uid, [
+                    base_stock_move_ids = stock_move_obj.search(cr, uid, [
                         ('state', '=', 'done'),
                         ('picking_id.type', '=', 'in'),
                         ('product_id', '=', product.id),
                         ('date', '<', older_stock_move.date)
                     ], limit=1, order='date', context=context)
-                    if base_stock_move_id:
+                    if base_stock_move_ids:
                         # If there is no quantity available, the standard_price is simply the price of the last move
-                        new_standard_price = stock_move_obj.browse(cr, uid, base_stock_move_id, context=context).last_purchase_price
+                        new_standard_price = stock_move_obj.browse(cr, uid, base_stock_move_ids[0], context=context).last_purchase_price
                     else:
                         new_standard_price = dc_line.cost_price_mod
 

@@ -61,8 +61,9 @@
                     <field name="product_id" select="1" invisible="1"/>
                     <notebook colspan="4">
                         <page string="Invoices">
+                            <field name="fret_amount" colspan="4"/>
                             <separator string="Invoices" colspan="4"/>
-                            <field name="invoice_ids" widget="many2many" nolabel="1" domain="['|','|',('distribution_id','=',False),('distribution_id','=',active_id),('distribution_id.state','=','canceled'),('type','=','in_invoice')]" context="{'type':'in_invoice', 'journal_type': 'purchase'}"/>
+                            <field name="invoice_ids" widget="many2many" nolabel="1" colspan="4" domain="['|','|',('distribution_id','=',False),('distribution_id','=',active_id),('distribution_id.state','=','canceled'),('type','=','in_invoice')]" context="{'type':'in_invoice', 'journal_type': 'purchase'}"/>
                         </page>
                         <page string="Cost lines" attrs="{'invisible': [('state','=', 'draft')]}">
                             <field name="line_ids" colspan="4" nolabel="1">
