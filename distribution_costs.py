@@ -73,6 +73,8 @@ class distribution_costs(osv.osv):
         'date': lambda * a: time.strftime('%Y-%m-%d %H:%M:%S'),
         'state': 'draft',
         'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'weight': 0.0,
+        'volume': 0.0,
     }
 
     def read_invoices(self, cr, uid, ids, context=None):
@@ -304,6 +306,12 @@ class distribution_costs_line(osv.osv):
 
     _defaults = {
         'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'weight': 0.0,
+        'volume': 0.0,
+        'price_total': 0.0,
+        'fret_total': 0.0,
+        'quantity': 0.0,
+        'manual_coef': 0.0,
     }
 
 distribution_costs_line()
