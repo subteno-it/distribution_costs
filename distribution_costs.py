@@ -159,7 +159,7 @@ class distribution_costs(osv.osv):
             context = {}
 
         product_obj = self.pool.get('product.product')
-        purchase_order_obj = self.pool.get('purchase.order')
+        purchase_line_obj = self.pool.get('purchase.order.line')
         res_currency_obj = self.pool.get('res.currency')
         product_uom_obj = self.pool.get('product.uom')
         stock_move_obj = self.pool.get('stock.move')
@@ -167,13 +167,18 @@ class distribution_costs(osv.osv):
         for distribution_costs in self.browse(cr, uid, ids, context=context):
             for dc_line in distribution_costs.line_ids:
                 # Update cost price on all moves linked to this line
-                purchase_order_ids = purchase_order_obj.search(cr, uid, [('invoice_ids', 'in', dc_line.invoice_line_id.invoice_id.id)], context=context)
-                stock_move_ids = stock_move_obj.search(cr, uid, [('invoice_line_id', '=', dc_line.invoice_line_id.id)], context=context)
-                if purchase_order_ids:
-                    for purchase_order in purchase_order_obj.browse(cr, uid, purchase_order_ids, context=context):
-                        for purchase_order_line in purchase_order.order_line:
-                            stock_move_ids += [stock_move.id for stock_move in purchase_order_line.move_ids if purchase_order_line.product_id.id == dc_line.product_id.id]
+                purchase_line_ids = purchase_line_obj.search(cr, uid, [
+                    ('invoice_lines', 'in', dc_line.invoice_line_id.id),
+                    ('product_id', '=', dc_line.product_id.id)
+                ], context=context)
+                stock_move_ids = stock_move_obj.search(cr, uid, [
+                    ('invoice_line_id', '=', dc_line.invoice_line_id.id),
+                    ('product_id', '=', dc_line.product_id.id)
+                ], context=context)
+                for line in purchase_line_obj.browse(cr, uid, purchase_line_ids, context=context):
+                    stock_move_ids += [stock_move.id for stock_move in line.move_ids if line.product_id.id == dc_line.product_id.id]
 
+                stock_move_ids = list(set(stock_move_ids))
                 stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
 
                 # Compute the new PUMP for products that are in "distribution" cost_method
@@ -194,7 +199,7 @@ class distribution_costs(osv.osv):
                     ], limit=1, order='date', context=context)
                     if base_stock_move_ids:
                         # If there is no quantity available, the standard_price is simply the price of the last move
-                        new_standard_price = stock_move_obj.browse(cr, uid, base_stock_move_ids[0], context=context).last_purchase_price
+                        new_standard_price = stock_move_obj.browse(cr, uid, base_stock_move_ids[0], context=context).average_price
                     else:
                         new_standard_price = dc_line.cost_price_mod
 
@@ -207,12 +212,12 @@ class distribution_costs(osv.osv):
                     ], order='date', context=context)
                     done_stock_moves = stock_move_obj.browse(cr, uid, done_stock_move_ids, context=context)
 
-                    # Retrieve starting available quantity
-                    ctx = context.copy()
-                    ctx['to_date'] = older_stock_move.date
-                    available_quantity = product_obj.browse(cr, uid, product.id, context=context).qty_available or 0
-
                     for move in done_stock_moves:
+                        # Retrieve available quantity in each date of move
+                        ctx = context.copy()
+                        ctx['to_date'] = older_stock_move.date
+                        available_quantity = product_obj.browse(cr, uid, product.id, context=context).qty_available or 0
+
                         # If no quantity available, standard price = unit price
                         if available_quantity <= 0 or new_standard_price is None:
                             new_standard_price = move.price_unit
@@ -230,8 +235,7 @@ class distribution_costs(osv.osv):
                             ('product_id', '=', product.id),
                             ('date', '>=', move.date)
                         ], context=context)
-                        stock_move_obj.write(cr, uid, stock_move_to_write, {'last_purchase_price': new_standard_price}, context=context)
-                        available_quantity += move.product_qty
+                        stock_move_obj.write(cr, uid, stock_move_to_write, {'average_price': new_standard_price}, context=context)
 
                     # Saves the new standard price on the product
                     dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
@@ -304,15 +308,15 @@ class distribution_costs_line(osv.osv):
 
         'price_total': fields.float('Price total', readonly=True, digits_compute=dp.get_precision('Account'),  help='Total price of the products'),
         'fret_total': fields.float('Fret', readonly=True, digits_compute=dp.get_precision('Account'), help='Amount of fret'),
-        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=False, help='Total tax amount'),
+        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=True, help='Total tax amount'),
 
-        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=False, help='Amount of fret'),
-        'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Unit price of the product'),
-        'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Total tax amount'),
-        'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=False, help='[Cost price / Unit price] coefficient'),
-        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Computed cost price'),
+        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=True, help='Amount of fret'),
+        'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Unit price of the product'),
+        'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Total tax amount'),
+        'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=True, help='[Cost price / Unit price] coefficient'),
+        'cost_price': fields.function(_compute_values, method=True, string='Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Computed cost price'),
         'manual_coef': fields.float('Modified Coefficient', help='Coefficient modifier'),
-        'cost_price_mod': fields.function(_compute_values, method=True, string='Modified Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=False, help='Computed cost price, with manual_coef'),
+        'cost_price_mod': fields.function(_compute_values, method=True, string='Modified Cost Price', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Computed cost price, with manual_coef'),
     }
 
     _defaults = {

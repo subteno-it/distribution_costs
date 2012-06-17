@@ -329,9 +329,9 @@ msgid "Distribution Costs line"
 msgstr "Ligne de coût de distribution"
 
 #. module: distribution_costs
-#: help:stock.move,last_purchase_price:0
+#: help:stock.move,average_price:0
 msgid "Last cost price on a purchase order"
-msgstr "Dernier prix d'achat sur une commande"
+msgstr "Prix moyen Pondéré sur une commande"
 
 #. module: distribution_costs
 #: help:distribution.costs,line_ids:0
@@ -360,9 +360,9 @@ msgid "Companies"
 msgstr "Sociétés"
 
 #. module: distribution_costs
-#: field:stock.move,last_purchase_price:0
+#: field:stock.move,average_price:0
 msgid "Last Purchase Price"
-msgstr "Dernier prix d'achat"
+msgstr "Prix Moyen Pondéré"
 
 #. module: distribution_costs
 #: help:report.intrastat.code,tax_ids:0

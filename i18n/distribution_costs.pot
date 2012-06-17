@@ -333,7 +333,7 @@ msgid "Draft"
 msgstr ""
 
 #. module: distribution_costs
-#: help:stock.move,last_purchase_price:0
+#: help:stock.move,average_price:0
 msgid "Last cost price on a purchase order"
 msgstr ""
 
@@ -363,7 +363,7 @@ msgid "Companies"
 msgstr ""
 
 #. module: distribution_costs
-#: field:stock.move,last_purchase_price:0
+#: field:stock.move,average_price:0
 msgid "Last Purchase Price"
 msgstr ""
 

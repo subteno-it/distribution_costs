@@ -32,7 +32,7 @@ class stock_move(osv.osv):
     _inherit = 'stock.move'
 
     _columns = {
-        'last_purchase_price': fields.float('Last Purchase Price', help='Last cost price on a purchase order'),
+        'average_price': fields.float('Average Price', help='Average price on a purchase order'),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Account invoice lines', ),
      }
 
