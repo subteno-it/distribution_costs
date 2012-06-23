@@ -29,6 +29,7 @@ from osv import fields
 from tools.translate import _
 import time
 import decimal_precision as dp
+from datetime import datetime, timedelta
 
 
 class distribution_costs(osv.osv):
@@ -188,7 +189,8 @@ class distribution_costs(osv.osv):
 
                     move = stock_move_obj.browse(cr, uid, stock_move_ids[0], context=context)
                     ctx = context.copy()
-                    ctx['to_date'] = move.date
+                    to_date = datetime.strftime(datetime.strptime(move.date, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=-1), '%Y-%m-%d %H:%M:%S')
+                    ctx['to_date'] = to_date
                     available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
 
                     # If no quantity available, standard price = unit price
@@ -198,7 +200,7 @@ class distribution_costs(osv.osv):
                     # Else, compute the new standard price
                     else:
                         amount_unit = product.price_get('standard_price', context)[product.id]
-                        new_standard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
+                        new_standard_price = ((amount_unit * available_quantity) + (dc_line.cost_price_mod * move.product_qty)) / (available_quantity + move.product_qty)
                     stock_move_obj.write(cr, uid, stock_move_ids, {'average_price': new_standard_price}, context=context)
                     # Saves the new standard price on the product
                     dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
