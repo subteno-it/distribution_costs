@@ -24,7 +24,7 @@
 
 {
     'name': 'Distribution Costs',
-    'version': '1.1',
+    'version': '1.2',
     'category': 'Generic Modules/Sales & Purchases',
     'description': """Computes average purchase price from invoices and misc costs
 

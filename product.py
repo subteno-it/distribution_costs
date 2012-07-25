@@ -56,6 +56,10 @@ class product_product(osv.osv):
             help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
     }
 
+    _defaults = {
+        'cost_method': lambda *a: 'standard',
+    }
+
 product_product()
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
