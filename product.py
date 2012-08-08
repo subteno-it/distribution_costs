@@ -42,7 +42,7 @@ class product_template(osv.osv):
 
     _columns = {
         'cost_method': fields.selection([('standard', 'Standard Price'), ('average', 'Average Price'), ('distribution', 'Average Price (Distribution)')], 'Costing Method', required=True,
-            help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
+                                        help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
     }
 
 product_template()
@@ -53,11 +53,11 @@ class product_product(osv.osv):
 
     _columns = {
         'cost_method': fields.selection([('standard', 'Standard Price'), ('average', 'Average Price'), ('distribution', 'Average Price (Distribution)')], 'Costing Method', required=True,
-            help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
+                                        help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
     }
 
     _defaults = {
-        'cost_method': lambda *a: 'standard',
+        'cost_method': 'standard',
     }
 
 product_product()

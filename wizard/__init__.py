@@ -2,7 +2,7 @@
 ##############################################################################
 #
 #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
-#    Copyright (C) 2011 SYLEAM Info Services (<http://www.Syleam.fr/>) 
+#    Copyright (C) 2011 SYLEAM Info Services (<http://www.Syleam.fr/>)
 #              Sylvain Garancher <sylvain.garancher@syleam.fr>
 #
 #    This file is a part of distribution_costs

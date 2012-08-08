@@ -27,9 +27,9 @@
 from osv import osv
 from osv import fields
 from tools.translate import _
-import time
 import decimal_precision as dp
 from datetime import datetime, timedelta
+import tools
 
 
 class distribution_costs(osv.osv):
@@ -72,10 +72,11 @@ class distribution_costs(osv.osv):
     }
 
     _defaults = {
-        'name': lambda self, cr, uid, ids, c = None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
-        'date': lambda * a: time.strftime('%Y-%m-%d %H:%M:%S'),
+        'name': lambda self, cr, uid, ids, c=None: self.pool.get('ir.sequence').get(cr, uid, 'distribution.costs'),
+        # TODO : Find a better solution to get the datetime default value in user's timezone
+        'date': lambda self, cr, uid, ids, c=None: fields.datetime.context_timestamp(cr, uid, timestamp=datetime.now(), context=c).strftime(tools.DEFAULT_SERVER_DATETIME_FORMAT),
         'state': 'draft',
-        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
         'weight': 0.0,
         'volume': 0.0,
         'fret_amount': 0.0,
@@ -161,8 +162,6 @@ class distribution_costs(osv.osv):
 
         product_obj = self.pool.get('product.product')
         purchase_line_obj = self.pool.get('purchase.order.line')
-        #res_currency_obj = self.pool.get('res.currency')
-        #product_uom_obj = self.pool.get('product.uom')
         stock_move_obj = self.pool.get('stock.move')
 
         for distribution_costs in self.browse(cr, uid, ids, context=context):
@@ -204,67 +203,6 @@ class distribution_costs(osv.osv):
                     stock_move_obj.write(cr, uid, stock_move_ids, {'average_price': new_standard_price}, context=context)
                     # Saves the new standard price on the product
                     dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
-
-
-
-
-
-
-
-
-                    ## Search the older modified stock move (from date of receipt)
-                    #actual_stock_move_id = stock_move_obj.search(cr, uid, [('id', 'in', stock_move_ids)], limit=1, order='date', context=context)[0]
-                    #actual_stock_move = stock_move_obj.browse(cr, uid, actual_stock_move_id, context=context)
-
-                    ## Search the previous move, to pick a right base standard_price
-                    #previous_stock_move_ids = stock_move_obj.search(cr, uid, [
-                    #    ('state', '=', 'done'),
-                    #    ('picking_id.type', '=', 'in'),
-                    #    ('product_id', '=', product.id),
-                    #    ('date', '<', actual_stock_move.date)
-                    #], limit=1, order='date', context=context)
-                    #if previous_stock_move_ids:
-                    #    # If there is no quantity available, the standard_price is simply the price of the last move
-                    #    new_standard_price = stock_move_obj.browse(cr, uid, previous_stock_move_ids[0], context=context).average_price
-                    #else:
-                    #    new_standard_price = dc_line.cost_price_mod
-
-                    ## Search all moves for this product which have been receipt after, ordered by done date
-                    #actual_next_stock_move_ids = stock_move_obj.search(cr, uid, [
-                    #    ('state', '=', 'done'),
-                    #    ('picking_id.type', '=', 'in'),
-                    #    ('product_id', '=', product.id),
-                    #    ('date', '>=', actual_stock_move.date)
-                    #], order='date', context=context)
-
-                    #for move_id in actual_next_stock_move_ids:
-                    #    move = stock_move_obj.browse(cr, uid, move_id, context=context)
-                    #    # Retrieve available quantity in each date of move
-                    #    ctx = context.copy()
-                    #    ctx['to_date'] = move.date
-                    #    available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
-
-                    #    # If no quantity available, standard price = unit price
-                    #    if available_quantity <= 0 or new_standard_price is None:
-                    #        new_standard_price = move.price_unit
-
-                    #    # Else, compute the new standard price
-                    #    else:
-                    #        #new_standard_price = res_currency_obj.compute(cr, uid, dc_line.invoice_line_id.invoice_id.currency_id.id, move.company_id.currency_id.id, new_standard_price)
-                    #        new_standard_price = product_uom_obj._compute_price(cr, uid, move.product_uom.id, new_standard_price, product.uom_id.id)
-                    #        amount_unit = product.price_get('standard_price', context)[product.id]
-                    #        new_standard_price = ((amount_unit * available_quantity) + (new_standard_price * move.product_qty)) / (available_quantity + move.product_qty)
-
-                    #    # Modify the last purchase price on all done moves after the current move
-                    #    stock_move_to_write_ids = stock_move_obj.search(cr, uid, [
-                    #        ('state', '=', 'done'),
-                    #        ('product_id', '=', product.id),
-                    #        ('date', '>=', move.date)
-                    #    ], context=context)
-                    #    stock_move_obj.write(cr, uid, stock_move_to_write_ids, {'average_price': new_standard_price}, context=context)
-
-                    ## Saves the new standard price on the product
-                    #dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
 
     def copy(self, cr, uid, id, default=None, context=None):
         """
@@ -332,11 +270,11 @@ class distribution_costs_line(osv.osv):
         'invoice_line_id': fields.many2one('account.invoice.line', 'Invoice line', readonly=True, help='Original invoice line for this distribution costs line'),
         'company_id': fields.many2one('res.company', 'Company', readonly=True, help='Company of the line'),
 
-        'price_total': fields.float('Price total', readonly=True, digits_compute=dp.get_precision('Account'),  help='Total price of the products'),
+        'price_total': fields.float('Price total', readonly=True, digits_compute=dp.get_precision('Account'), help='Total price of the products'),
         'fret_total': fields.float('Fret', readonly=True, digits_compute=dp.get_precision('Account'), help='Amount of fret'),
-        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=True, help='Total tax amount'),
+        'tax_total': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Total tax amount'),
 
-        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', digits_compute=dp.get_precision('Account'),  multi='prices', store=True, help='Amount of fret'),
+        'fret_unit': fields.function(_compute_values, method=True, string='Fret', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Amount of fret'),
         'price_unit': fields.function(_compute_values, method=True, string='Price unit', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Unit price of the product'),
         'tax_unit': fields.function(_compute_values, method=True, string='Tax amount', type='float', digits_compute=dp.get_precision('Account'), multi='prices', store=True, help='Total tax amount'),
         'coef': fields.function(_compute_values, method=True, string='Coefficient', type='float', multi='prices', store=True, help='[Cost price / Unit price] coefficient'),
@@ -346,7 +284,7 @@ class distribution_costs_line(osv.osv):
     }
 
     _defaults = {
-        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
         'weight': 0.0,
         'volume': 0.0,
         'price_total': 0.0,
@@ -391,7 +329,7 @@ class distribution_costs_line_tax(osv.osv):
     }
 
     _defaults = {
-        'company_id': lambda self, cr, uid, c = None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
+        'company_id': lambda self, cr, uid, c=None: self.pool.get('res.company')._company_default_get(cr, uid, 'distribution.costs', context=c),
     }
 
 distribution_costs_line_tax()

@@ -48,7 +48,7 @@
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
                 <form string="Distribution Costs">
-                    <field name="name" select="1"/>
+                    <field name="name"/>
                     <field name="date"/>
                     <field name="origin"/>
                     <field name="description"/>
@@ -58,7 +58,7 @@
                     <field name="volume"/>
                     <field name="weight_volume"/>
                     <field name="company_id" widget="selection"/>
-                    <field name="product_id" select="1" invisible="1"/>
+                    <field name="product_id" invisible="1"/>
                     <notebook colspan="4">
                         <page string="Invoices">
                             <field name="fret_amount" colspan="4"/>
@@ -89,7 +89,7 @@
                                         </tree>
                                     </field>
                                 </form>
-                                <tree string="Distribution Costs Line" editable="True">
+                                <tree string="Distribution Costs Line" editable="bottom">
                                     <field name="product_id"/>
                                     <field name="price_unit"/>
                                     <field name="fret_unit"/>
@@ -107,7 +107,7 @@
                         <button string="Cancel" states="draft,in_progress,confirmed" name="button_cancel" icon="gtk-cancel"/>
                         <button string="Read invoices" states="draft" name="button_progress" icon="gtk-apply"/>
                         <button string="Confirm" states="in_progress" name="button_confirm" icon="gtk-apply"/>
-                        <button string="Done" states="confirmed" name="button_done"/>
+                        <button string="Done" states="confirmed" name="button_done" icon="gtk-apply"/>
                     </group>
                 </form>
             </field>

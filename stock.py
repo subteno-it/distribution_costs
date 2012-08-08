@@ -34,7 +34,7 @@ class stock_move(osv.osv):
     _columns = {
         'average_price': fields.float('Average Price', help='Average price on a purchase order'),
         'invoice_line_id': fields.many2one('account.invoice.line', 'Account invoice lines', ),
-     }
+    }
 
 stock_move()
 
