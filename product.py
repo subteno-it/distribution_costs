@@ -31,7 +31,6 @@ class product_category(osv.osv):
 
     _columns = {
         'fret': fields.boolean('Fret', help='Check if this category is used to compute fret amount'),
-        'intrastat_id': fields.many2one('report.intrastat.code', 'Intrastat Code', help='Intrastat Code applied on the category'),
     }
 
 product_category()
