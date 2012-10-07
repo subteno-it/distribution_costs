@@ -31,7 +31,7 @@
             <field name="priority" eval="24"/>
             <field name="inherit_id" ref="product.product_normal_form_view"/>
             <field name="arch" type="xml">
-                <xpath expr="/form/notebook/page/group/group/field[@name='standard_price']" position="attributes">
+                <xpath expr="//field[@name='standard_price']" position="attributes">
                     <attribute name="attrs">{'readonly':[('cost_method','in',('average','distribution'))]}</attribute>
                 </xpath>
             </field>
