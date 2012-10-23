@@ -152,13 +152,26 @@ class distribution_costs(osv.osv):
 
         return True
 
-    def apply_cost(self, cr, uid, ids, distribution, line, move_ids, new_standard_price, context=None):
+    def apply_cost(self, cr, uid, ids, distribution, line, move_ids, context=None):
         """
         Method to apply cost in move and product
         """
-        move_obj = self.pool.get('stock.move')
-        move_obj.write(cr, uid, move_ids, {'average_price': new_standard_price}, context=context)
-        line.product_id.write({'standard_price': new_standard_price}, context=context)
+        if line.product_id.cost_method == 'distribution' and move_ids:
+            move_obj = self.pool.get('stock.move')
+            product_obj = self.pool.get('product.product')
+            product = line.product_id
+            move = move_obj.browse(cr, uid, move_ids[0], context=context)
+            ctx = dict(context, to_date=datetime.strftime(datetime.strptime(move.date, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=-1), '%Y-%m-%d %H:%M:%S'))
+            available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
+            # If no quantity available, standard price = unit price
+            if available_quantity <= 0:
+                new_standard_price = line.cost_price_mod
+            # Else, compute the new standard price
+            else:
+                amount_unit = product.price_get('standard_price', context)[product.id]
+                new_standard_price = ((amount_unit * available_quantity) + (line.cost_price_mod * move.product_qty)) / (available_quantity + move.product_qty)
+            move_obj.write(cr, uid, move_ids, {'average_price': new_standard_price}, context=context)
+            line.product_id.write({'standard_price': new_standard_price}, context=context)
         return True
 
     def update_cost_price(self, cr, uid, ids, context=None):
@@ -167,7 +180,6 @@ class distribution_costs(osv.osv):
         """
         if context is None:
             context = {}
-        product_obj = self.pool.get('product.product')
         purchase_line_obj = self.pool.get('purchase.order.line')
         stock_move_obj = self.pool.get('stock.move')
         for distribution_costs in self.browse(cr, uid, ids, context=context):
@@ -187,19 +199,7 @@ class distribution_costs(osv.osv):
                 stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
                 # Compute the new PUMP for products that are in "distribution" cost_method
                 # If we have modified some moves, we have to compute the new PUMP for all "new" moves on this product
-                if dc_line.product_id.cost_method == 'distribution' and stock_move_ids:
-                    product = dc_line.product_id
-                    move = stock_move_obj.browse(cr, uid, stock_move_ids[0], context=context)
-                    ctx = dict(context, to_date=datetime.strftime(datetime.strptime(move.date, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=-1), '%Y-%m-%d %H:%M:%S'))
-                    available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
-                    # If no quantity available, standard price = unit price
-                    if available_quantity <= 0:
-                        new_standard_price = dc_line.cost_price_mod
-                    # Else, compute the new standard price
-                    else:
-                        amount_unit = product.price_get('standard_price', context)[product.id]
-                        new_standard_price = ((amount_unit * available_quantity) + (dc_line.cost_price_mod * move.product_qty)) / (available_quantity + move.product_qty)
-                    self.apply_cost(cr, uid, ids, distribution_costs, dc_line, stock_move_ids, new_standard_price, context=context)
+                self.apply_cost(cr, uid, ids, distribution_costs, dc_line, stock_move_ids, context=context)
         return True
 
     def copy(self, cr, uid, id, default=None, context=None):
@@ -251,7 +251,6 @@ class distribution_costs_line(osv.osv):
                 'fret_unit': fret_unit,
                 'tax_unit': tax_unit,
                 'cost_price': cost_price,
-                'coef': coef,
                 'cost_price_mod': cost_price_mod,
             }
 
