@@ -28,6 +28,8 @@
     'category': 'Generic Modules/Sales & Purchases',
     'description': """Computes average purchase price from invoices and misc costs
 
+Warning:  the cost method is in product template not product so this method will be the same of all products depend template.
+
 Use l10n_fr_intrastat_product module from Akretion.
 This module replace report_intrastat and it's available to lp:new-report-intrastat.""",
     'author': 'SYLEAM',
