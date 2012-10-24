@@ -196,7 +196,7 @@ class distribution_costs(osv.osv):
                 for line in purchase_line_obj.browse(cr, uid, purchase_line_ids, context=context):
                     stock_move_ids += [stock_move.id for stock_move in line.move_ids if line.product_id.id == dc_line.product_id.id]
                 stock_move_ids = list(set(stock_move_ids))
-                stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod}, context=context)
+                stock_move_obj.write(cr, uid, stock_move_ids, {'price_unit': dc_line.cost_price_mod, 'price_currency_id': distribution_costs.company_id.currency_id.id}, context=context)
                 # Compute the new PUMP for products that are in "distribution" cost_method
                 # If we have modified some moves, we have to compute the new PUMP for all "new" moves on this product
                 self.apply_cost(cr, uid, ids, distribution_costs, dc_line, stock_move_ids, context=context)
@@ -250,6 +250,7 @@ class distribution_costs_line(osv.osv):
                 'price_unit': price_unit,
                 'fret_unit': fret_unit,
                 'tax_unit': tax_unit,
+                'coef': coef,
                 'cost_price': cost_price,
                 'cost_price_mod': cost_price_mod,
             }
