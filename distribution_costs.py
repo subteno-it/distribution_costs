@@ -81,6 +81,12 @@ class distribution_costs(osv.osv):
         'fret_amount': 0.0,
     }
 
+    def _prepare_tax_data(self, cr, invoice_line, tax_data, context=None):
+        """
+        Used for adding specific taxes
+        """
+        return tax_data
+
     def read_invoices(self, cr, uid, ids, context=None):
         """
         Read invoices to create distribution costs lines
@@ -127,6 +133,7 @@ class distribution_costs(osv.osv):
             if intrastat_id:
                 for tax_id in intrastat_id.tax_ids:
                     tax_data.append((0, 0, {'tax_id': tax_id.id}))
+            tax_data = self._prepare_tax_data(cr, uid, invoice_line, tax_data, context=context)
 
             line_price_subtotal = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_subtotal)
             line_price_unit = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_unit)
