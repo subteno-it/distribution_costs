@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        ##############################################################################
+        #
+        #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
+        #    Copyright (C) 2012 SYLEAM Info Services ([http://www.syleam.fr/]) 
+        #              Sebastien LANGE [sebastien.lange@syleam.fr]
+        #
+        #    This file is a part of distribution_costs
+        #
+        #    distribution_costs is free software: you can redistribute it and/or modify
+        #    it under the terms of the GNU Affero General Public License as published by
+        #    the Free Software Foundation, either version 3 of the License, or
+        #    (at your option) any later version.
+        #
+        #    distribution_costs is distributed in the hope that it will be useful,
+        #    but WITHOUT ANY WARRANTY; without even the implied warranty of
+        #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        #    GNU Affero General Public License for more details.
+        #
+        #    You should have received a copy of the GNU Affero General Public License
+        #    along with this program.  If not, see [http://www.gnu.org/licenses/].
+        #
+        ##############################################################################
+
+        <record id="view_wizard_inventory_valuation_form" model="ir.ui.view">
+            <field name="name">Compute Inventory Valuation</field>
+            <field name="model">wizard.inventory.valuation</field>
+            <field name="priority" eval="8"/>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                <form string="Compute Inventory Valuation">
+                    <field name="date_valuation"/>
+                    <group colspan="4">
+                        <button string="Cancel" icon="gtk-cancel" type="object" name="cancel_inventory_valuation"/>
+                        <button string="Compute Inventory Valuation" icon="gtk-ok" type="object" name="compute_inventory_valuation"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="act_open_wizard_inventory_valuation_view">
+            <field name="name">Compute Inventory Valuation</field>
+            <field name="res_model">wizard.inventory.valuation</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_wizard_inventory_valuation_form"/>
+            <field name="target">new</field>
+        </record>
+
+        <record id="view_stock_inventory_valuation_tree" model="ir.ui.view">
+            <field name="name">stock.inventory.valuation.tree</field>
+            <field name="model">stock.inventory.valuation</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <tree string="Stock to date with cost">
+                    <field name="date"/>
+                    <field name="product_id" select="1"/>
+                    <field name="qty" sum="qty"/>
+                    <field name="uom_id"/>
+                    <field name="warehouse_id" select="1"/>
+                    <field name="location_id" select="1"/>
+                    <field name="standard_price"/>
+                    <field name="cost_price" sum="Value of the Stock"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_stock_inventory_valuation_search" model="ir.ui.view">
+            <field name="name">stock.inventory.valuation.search</field>
+            <field name="model">stock.inventory.valuation</field>
+            <field name="type">search</field>
+            <field name="priority" eval="8"/>
+            <field name="arch" type="xml">
+                <search string="Stock Inventory Valuation">
+                    <field name="product_id"/>
+                    <field name="warehouse_id"/>
+                    <field name="location_id"/>
+                    <newline/>
+                    <group expand="1" string="Group By..." colspan="4" col="20">
+                        <filter string="Warehouse" name="group_warehouse_id" icon="terp-go-home" domain="[]" context="{'group_by':'warehouse_id'}"/>
+                        <separator orientation="vertical"/>
+                        <filter string="Product" name="group_product_id" icon="terp-accessories-archiver" domain="[]" context="{'group_by':'product_id'}"/>
+                        <separator orientation="vertical"/>
+                        <filter string="Location" name="group_location_id" icon="terp-folder-violet" domain="[]" context="{'group_by':'location_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="act_open_stock_inventory_valuation_view">
+            <field name="name">Stock Inventory Valuation</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">stock.inventory.valuation</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree</field>
+            <field name="search_view_id" ref="view_stock_inventory_valuation_search"/>
+            <field name="domain">[]</field>
+            <field name="context">{}</field>
+        </record>
+
+        <record model="ir.actions.act_window.view" id="act_open_stock_inventory_valuation_view_tree">
+            <field name="act_window_id" ref="act_open_stock_inventory_valuation_view"/>
+            <field name="sequence" eval="10"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="view_stock_inventory_valuation_tree"/>
+        </record>
+
+        <menuitem id="menu_stock_inventory_valuation"
+            parent="stock.next_id_61"
+            sequence="20"
+            action="act_open_stock_inventory_valuation_view"/>
+
+        <menuitem id="menu_wizard_inventory_valuation"
+            parent="menu_stock_inventory_valuation"
+            sequence="20"
+            action="act_open_wizard_inventory_valuation_view"/>
+
+    </data>
+</openerp>

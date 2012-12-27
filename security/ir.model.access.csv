@@ -5,3 +5,4 @@
 "distribution_costs_line_manager","distribution_costs_line_manager","distribution_costs.model_distribution_costs_line","purchase.group_purchase_manager","1","1","1","1"
 "distribution_costs_line_tax_user","distribution_costs_line_tax_user","distribution_costs.model_distribution_costs_line_tax","purchase.group_purchase_user","1","","",""
 "distribution_costs_line_tax_manager","distribution_costs_line_tax_manager","distribution_costs.model_distribution_costs_line_tax","purchase.group_purchase_manager","1","1","1","1"
+"access_stock_inventory_valuation_manager","stock_inventory_valuation manager","distribution_costs.model_stock_inventory_valuation","stock.group_stock_manager",1,1,1,1

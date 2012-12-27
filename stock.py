@@ -26,6 +26,7 @@
 
 from osv import osv
 from osv import fields
+import decimal_precision as dp
 
 
 class stock_move(osv.osv):
@@ -51,5 +52,25 @@ class stock_picking(osv.osv):
         return super(stock_picking, self)._invoice_line_hook(cr, uid, move_line, invoice_line_id)
 
 stock_picking()
+
+class stock_inventory_valuation(osv.osv):
+    _name = 'stock.inventory.valuation'
+    _description = 'Stock Inventory Valuation'
+    _rec_name = 'product_id'
+    _order = 'product_id'
+
+    _columns = {
+        'date': fields.date('Date of Inventory Valuation', help='Date of stock inventory valuation'),
+        'product_id': fields.many2one('product.product', 'Product'),
+        'qty': fields.float('Qty', digits_compute=dp.get_precision('Product UoM')),
+        'uom_id': fields.many2one('product.uom', 'UoM', help='UoM by default'),
+        'warehouse_id': fields.many2one('stock.warehouse', 'Warehouse'),
+        'location_id': fields.many2one('stock.location', 'Location'),
+        'standard_price': fields.float('Standard price', digits_compute=dp.get_precision('Purchase Price')),
+        'cost_price': fields.float('Stock Valuation', digits_compute=dp.get_precision('Purchase Price'), help='Standard Price x Quantity'),
+    }
+
+stock_inventory_valuation()
+
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

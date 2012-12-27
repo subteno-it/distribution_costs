@@ -4,6 +4,7 @@
 #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
 #    Copyright (C) 2011 SYLEAM Info Services (<http://www.Syleam.fr/>)
 #              Sylvain Garancher <sylvain.garancher@syleam.fr>
+#              Sebastien LANGE <sebastien.lange@syleam.fr>
 #
 #    This file is a part of distribution_costs
 #
@@ -53,6 +54,7 @@ This module replace report_intrastat and it's available to lp:new-report-intrast
         'product_view.xml',
         'report_intrastat_view.xml',
         'workflow/workflow.xml',
+        'wizard/stock_inventory_valuation.xml',
     ],
     'demo_xml': [],
     'test': [],

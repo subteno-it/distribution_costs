@@ -22,6 +22,6 @@
 #
 ##############################################################################
 
-
+import stock_inventory_valuation
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
