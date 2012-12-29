@@ -4,6 +4,7 @@
 #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
 #    Copyright (C) 2011 SYLEAM Info Services (<http://www.Syleam.fr/>)
 #              Sylvain Garancher <sylvain.garancher@syleam.fr>
+#              Sebastien LANGE <sebastien.lange@syleam.fr>
 #
 #    This file is a part of distribution_costs
 #
@@ -40,7 +41,7 @@ class product_template(osv.osv):
     _inherit = 'product.template'
 
     _columns = {
-        'cost_method': fields.selection([('standard', 'Standard Price'), ('average', 'Average Price'), ('distribution', 'Average Price (Distribution)')], 'Costing Method', required=True,
+        'cost_method': fields.selection([('standard', 'Standard Price'), ('std_distribution', 'Standard Price (Distribution)'), ('average', 'Average Price'), ('distribution', 'Average Price (Distribution)')], 'Costing Method', required=True,
                                         help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
     }
 

@@ -82,6 +82,12 @@ class distribution_costs(osv.osv):
         'fret_amount': 0.0,
     }
 
+    def _prepare_tax_data(self, cr, invoice_line, tax_data, context=None):
+        """
+        Used for adding specific taxes
+        """
+        return tax_data
+
     def read_invoices(self, cr, uid, ids, context=None):
         """
         Read invoices to create distribution costs lines
@@ -128,6 +134,7 @@ class distribution_costs(osv.osv):
             if intrastat_id:
                 for tax_id in intrastat_id.tax_ids:
                     tax_data.append((0, 0, {'tax_id': tax_id.id}))
+            tax_data = self._prepare_tax_data(cr, uid, invoice_line, tax_data, context=context)
 
             line_price_subtotal = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_subtotal)
             line_price_unit = res_currency_obj.compute(cr, uid, invoice_line.invoice_id.currency_id.id, distribution_costs.company_id.currency_id.id, invoice_line.price_unit)
@@ -153,14 +160,34 @@ class distribution_costs(osv.osv):
 
         return True
 
+    def apply_cost(self, cr, uid, ids, distribution, line, move_ids, context=None):
+        """
+        Method to apply cost in move and product
+        """
+        if line.product_id.cost_method == 'std_distribution':
+            line.product_id.write({'standard_price': line.cost_price_mod}, context=context)
+        if line.product_id.cost_method == 'distribution' and move_ids:
+            move_obj = self.pool.get('stock.move')
+            product_obj = self.pool.get('product.product')
+            product = line.product_id
+            move = move_obj.browse(cr, uid, move_ids[0], context=context)
+            ctx = dict(context, to_date=datetime.strftime(datetime.strptime(move.date, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=-1), '%Y-%m-%d %H:%M:%S'))
+            available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
+            # If no quantity available, standard price = unit price
+            if available_quantity <= 0:
+                new_standard_price = line.cost_price_mod
+            # Else, compute the new standard price
+            else:
+                amount_unit = product.price_get('standard_price', context)[product.id]
+                new_standard_price = ((amount_unit * available_quantity) + (line.cost_price_mod * move.product_qty)) / (available_quantity + move.product_qty)
+            move_obj.write(cr, uid, move_ids, {'average_price': new_standard_price}, context=context)
+            line.product_id.write({'standard_price': new_standard_price}, context=context)
+        return True
+
     def update_cost_price(self, cr, uid, ids, context=None):
         """
         This method updates products costs from lines
         """
-        if context is None:
-            context = {}
-
-        product_obj = self.pool.get('product.product')
         purchase_line_obj = self.pool.get('purchase.order.line')
         stock_move_obj = self.pool.get('stock.move')
 
@@ -183,37 +210,16 @@ class distribution_costs(osv.osv):
 
                 # Compute the new PUMP for products that are in "distribution" cost_method
                 # If we have modified some moves, we have to compute the new PUMP for all "new" moves on this product
-                if dc_line.product_id.cost_method == 'distribution' and stock_move_ids:
-                    product = dc_line.product_id
-
-                    move = stock_move_obj.browse(cr, uid, stock_move_ids[0], context=context)
-                    ctx = context.copy()
-                    to_date = datetime.strftime(datetime.strptime(move.date, '%Y-%m-%d %H:%M:%S') + timedelta(seconds=-1), '%Y-%m-%d %H:%M:%S')
-                    ctx['to_date'] = to_date
-                    available_quantity = product_obj.browse(cr, uid, product.id, context=ctx).qty_available or 0
-
-                    # If no quantity available, standard price = unit price
-                    if available_quantity <= 0:
-                        new_standard_price = dc_line.cost_price_mod
-
-                    # Else, compute the new standard price
-                    else:
-                        amount_unit = product.price_get('standard_price', context)[product.id]
-                        new_standard_price = ((amount_unit * available_quantity) + (dc_line.cost_price_mod * move.product_qty)) / (available_quantity + move.product_qty)
-                    stock_move_obj.write(cr, uid, stock_move_ids, {'average_price': new_standard_price}, context=context)
-                    # Saves the new standard price on the product
-                    dc_line.product_id.write({'standard_price': new_standard_price}, context=context)
+                self.apply_cost(cr, uid, ids, distribution_costs, dc_line, stock_move_ids, context=context)
 
     def copy(self, cr, uid, id, default=None, context=None):
         """
         Inherit copy method to avoid duplicating invoices when duplicating distribution costs case
         """
-
         default = {
             'invoice_ids': [],
             'line_ids': [],
         }
-
         return super(distribution_costs, self).copy(cr, uid, id, default, context=context)
 
 distribution_costs()
