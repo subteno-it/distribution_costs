@@ -735,3 +735,12 @@ msgstr "Valeur du poids volumétrique"
 msgid "Name of the origin document"
 msgstr "Nom du document d'origine"
 
+#. module: product
+#: selection:product.template,cost_method:0
+msgid "Standard Price (Distribution)"
+msgstr "Prix standard (Distribution)"
+
+#. module: product
+#: selection:product.template,cost_method:0
+msgid "Average Price (Distribution)"
+msgstr "Prix moyen (Distribution)"
