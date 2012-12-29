@@ -82,7 +82,7 @@ class distribution_costs(osv.osv):
         'fret_amount': 0.0,
     }
 
-    def _prepare_tax_data(self, cr, invoice_line, tax_data, context=None):
+    def _prepare_tax_data(self, cr, uid, invoice_line, tax_data, context=None):
         """
         Used for adding specific taxes
         """
