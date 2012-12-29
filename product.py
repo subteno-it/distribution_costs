@@ -46,19 +46,4 @@ class product_template(osv.osv):
 
 product_template()
 
-
-class product_product(osv.osv):
-    _inherit = 'product.product'
-
-    _columns = {
-        'cost_method': fields.selection([('standard', 'Standard Price'), ('average', 'Average Price'), ('distribution', 'Average Price (Distribution)')], 'Costing Method', required=True,
-                                        help="Standard Price: the cost price is fixed and recomputed periodically (usually at the end of the year), Average Price: the cost price is recomputed at each reception of products."),
-    }
-
-    _defaults = {
-        'cost_method': 'standard',
-    }
-
-product_product()
-
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
