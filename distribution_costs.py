@@ -322,7 +322,7 @@ class distribution_costs_line_tax(osv.osv):
                 base_value = getattr(tax_line.line_id, tax_line.tax_id.domain)
 
             # 1 as quantity because base_value includes the quantity
-            taxes_value = account_tax_obj.compute_all(cr, uid, [tax_line.tax_id], base_value, 1, address_id=costs_id.address_id.id, product=tax_line.line_id.product_id.id, partner=costs_id.partner_id.id)
+            taxes_value = account_tax_obj.compute_all(cr, uid, [tax_line.tax_id], base_value, 1, product=tax_line.line_id.product_id.id, partner=costs_id.partner_id.id)
             res[tax_line.id] = sum([data.get('amount', 0.) for data in taxes_value['taxes']])
 
         return res
