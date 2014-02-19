@@ -54,7 +54,7 @@ This module replace report_intrastat and it's available to lp:new-report-intrast
         'product_data.xml',
         'product_view.xml',
         'report_intrastat_view.xml',
-        'workflow/workflow.xml',
+        'distribution_costs_workflow.xml',
         'wizard/stock_inventory_valuation.xml',
     ],
     'demo_xml': [],
