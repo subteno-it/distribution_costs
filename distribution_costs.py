@@ -35,6 +35,7 @@ import tools
 class distribution_costs(osv.osv):
     _name = 'distribution.costs'
     _description = 'Distribution Costs'
+    _inherit = ['mail.thread']
 
     def _compute_weight_volume(self, cr, uid, ids, field_name, arg, context=None):
         """
