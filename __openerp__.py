@@ -35,6 +35,7 @@ This module replace report_intrastat and it's available to lp:new-report-intrast
     'website': 'http://www.syleam.fr/',
     'depends': [
         'base',
+        'account',
         'product',
         'purchase',
         'stock',

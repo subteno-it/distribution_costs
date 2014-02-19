@@ -59,7 +59,7 @@ class distribution_costs(osv.osv):
         'origin': fields.char('External reference', size=64, required=True, readonly=True, states={'draft': [('readonly', False)]}, help='Name of the origin document'),
         'description': fields.char('Label', size=64, required=True, readonly=True, states={'draft': [('readonly', False)]}, help='Label of the case'),
         'partner_id': fields.many2one('res.partner', 'Shipping company', required=True, readonly=True, states={'draft': [('readonly', False)]}, help='Partner name'),
-        'address_id': fields.many2one('res.partner.address', 'From address', required=True, readonly=True, states={'draft': [('readonly', False)]}, help='Partner address'),
+        'address_id': fields.many2one('res.partner', 'From address', required=True, readonly=True, states={'draft': [('readonly', False)]}, help='Partner address'),
         'weight': fields.float('Weight', readonly=True, states={'draft': [('readonly', False)]}, help='Total weight'),
         'volume': fields.float('Volume', readonly=True, states={'draft': [('readonly', False)]}, help='Total volume'),
         'weight_volume': fields.function(_compute_weight_volume, method=True, string='Weight volume', type='float', store=False, help='Weight/Volume value'),

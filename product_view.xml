@@ -6,6 +6,8 @@
         #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
         #    Copyright (C) 2011 SYLEAM Info Services ([http://www.Syleam.fr/]) 
         #              Sylvain Garancher [sylvain.garancher@syleam.fr]
+        #    Copyright (C) 2014 SYLEAM Info Services ([http://www.Syleam.fr/]) 
+        #              Sebastien LANGE [sebastien.lange@syleam.fr]
         #
         #    This file is a part of distribution_costs
         #
@@ -27,7 +29,6 @@
         <record id="view_product_product_form" model="ir.ui.view">
             <field name="name">product.product.form</field>
             <field name="model">product.product</field>
-            <field name="type">form</field>
             <field name="priority" eval="24"/>
             <field name="inherit_id" ref="product.product_normal_form_view"/>
             <field name="arch" type="xml">
@@ -40,11 +41,10 @@
         <record id="view_product_category_form" model="ir.ui.view">
             <field name="name">product.category.form</field>
             <field name="model">product.category</field>
-            <field name="type">form</field>
             <field name="priority" eval="8"/>
             <field name="inherit_id" ref="product.product_category_form_view"/>
             <field name="arch" type="xml">
-                <xpath expr="/form/field[@name='type']" position="after">
+                <xpath expr="//field[@name='type']" position="after">
                     <field name="fret"/>
                 </xpath>
             </field>

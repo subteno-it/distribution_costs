@@ -6,6 +6,8 @@
         #    distribution_costs module for OpenERP, Computes average purchase price from invoices and misc costs
         #    Copyright (C) 2011 SYLEAM Info Services ([http://www.Syleam.fr/]) 
         #              Sylvain Garancher [sylvain.garancher@syleam.fr]
+        #    Copyright (C) 2014 SYLEAM Info Services ([http://www.Syleam.fr/]) 
+        #              Sebastien LANGE [sebastien.lange@syleam.fr]
         #
         #    This file is a part of distribution_costs
         #
@@ -30,7 +32,6 @@
         <record id="view_distribution_costs_tree" model="ir.ui.view">
             <field name="name">distribution.costs.tree</field>
             <field name="model">distribution.costs</field>
-            <field name="type">tree</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
                 <tree string="Distribution Costs">
@@ -44,7 +45,6 @@
         <record id="view_distribution_costs_form" model="ir.ui.view">
             <field name="name">distribution.costs.form</field>
             <field name="model">distribution.costs</field>
-            <field name="type">form</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
                 <form string="Distribution Costs">
@@ -141,7 +141,6 @@
         <record id="view_distribution_costs_line_tree" model="ir.ui.view">
             <field name="name">distribution.costs.line.tree</field>
             <field name="model">distribution.costs.line</field>
-            <field name="type">tree</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
                 <tree string="Distribution Costs Line">
@@ -160,7 +159,6 @@
         <record id="view_distribution_costs_line_form" model="ir.ui.view">
             <field name="name">distribution.costs.line.form</field>
             <field name="model">distribution.costs.line</field>
-            <field name="type">form</field>
             <field name="priority" eval="8"/>
             <field name="arch" type="xml">
             <form string="Distribution Costs Line">
