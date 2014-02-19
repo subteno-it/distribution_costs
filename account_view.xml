@@ -32,7 +32,7 @@
             <field name="priority" eval="8"/>
             <field name="inherit_id" ref="account.invoice_supplier_form"/>
             <field name="arch" type="xml">
-                <xpath expr="//field[@name='tax_line']" position="after">
+                <xpath expr="//field[@name='reference']/.." position="after">
                     <field name="distribution"/>
                 </xpath>
             </field>

@@ -443,7 +443,7 @@ msgstr "Cocher si cette facture est une facture de fret"
 #. module: distribution_costs
 #: field:distribution.costs,fret_amount:0
 msgid "Fret Amount"
-msgstr "Fret Amount"
+msgstr "Montant du fret"
 
 #. module: distribution_costs
 #: constraint:report.intrastat.code:0
@@ -605,6 +605,7 @@ msgstr "Qté"
 
 #. module: distribution_costs
 #: field:distribution.costs,name:0
+#: view:distribution.costs:0
 msgid "Case reference"
 msgstr "Référence"
 

@@ -56,8 +56,10 @@
                         <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,confirmed,done" statusbar_colors='{"cancel":"red","confirmed":"blue"}'/>
                     </header>
                     <sheet>
+                        <div class="oe_edit_only">
+                            <label for="name" string="Case reference"/>
+                        </div>
                         <h1>
-                            <label for="name" string="Name"/>
                             <field name="name" class="oe_inline" readonly="1"/>
                         </h1>
                         <group>
@@ -78,7 +80,9 @@
                         </group>
                         <notebook colspan="4">
                             <page string="Invoices">
-                                <field name="fret_amount" colspan="4"/>
+                                <group>
+                                    <field name="fret_amount"/>
+                                </group>
                                 <separator string="Invoices" colspan="4"/>
                                 <field name="invoice_ids" widget="many2many" nolabel="1" colspan="4" domain="['|','|',('distribution_id','=',False),('distribution_id','=',active_id),('distribution_id.state','=','canceled'),('type','=','in_invoice')]" context="{'type':'in_invoice', 'journal_type': 'purchase'}"/>
                             </page>
